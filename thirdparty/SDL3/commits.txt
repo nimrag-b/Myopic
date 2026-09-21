@@ -1,0 +1,9 @@
+SDL             a6c68172beb08143d895bc8d8980d0796903c4e4              
+SDL_image       7821e4e093c10c2c6af0e73a37cdefe15ba40208       
+SDL_mixer       df8870a0ac9b2dd56bf22e63627a66cc743030bb       
+SDL_ttf         d07d10143ee1eec548f54e40e4e4cec2446cd640         
+SDL_rtf         0bdba67b48e67f2c7d80a08720dcce8b54b01018         
+SDL_net         0317062ea97aadcc4174bdc1f592f04e7d320d73         
+SDL_sound       02216903081b4ca8e3c97987ea713a15f4c65dca       
+SDL_shadercross 1ff05bec573988a98ef9e0260b4da44f512b8367 
+SDL2_compat     45bb7f6ef4bcd660e282c2f61cde0afa095236b6     
