@@ -129,7 +129,30 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Error.cpp" />
+    <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="Myopic.cpp" />
+    <ClCompile Include="Resource.cpp" />
+    <ClCompile Include="Assets.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GameError.h" />
+    <ClInclude Include="Graphics.h" />
+    <ClInclude Include="Resource.h" />
+    <ClInclude Include="Assets.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ShaderHeader.hlsli" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Main.ps.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Main.vs.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
