@@ -6,8 +6,7 @@
 #include <memory>
 #include <iostream>
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <atomic>
 
 
 typedef uint32_t RID; /* Resource ID*/
@@ -38,17 +37,23 @@ private:
 
 class ref_count {
 public:
+
+	ref_count& operator=(const ref_count& other) {
+		this->count.exchange(other.count);
+		return *this;
+	}
+
 	unsigned long AddRef() {
-		return InterlockedIncrement(&count);
+		return ++count;
 	}
 	unsigned long RemoveRef() {
-		return InterlockedDecrement(&count);
+		return --count;
 	}
 	unsigned long Count() const {
 		return count;
 	}
 private:
-	volatile unsigned long count = 0;
+	std::atomic<unsigned long> count = 0;
 };
 
 
@@ -56,17 +61,22 @@ private:
 template <typename T>
 class resource_owner {
 public:
-	resource_owner(std::unique_ptr<T> ptr) : ptr(std::move(ptr)) {
+	resource_owner(std::unique_ptr<T> ptr) : ptr(ptr.release()) {
+	}
+
+	~resource_owner() {
+		//Potential err if not created with new - may need to extract deleter from unique_ptr
+		delete ptr;
 	}
 
 	T* get() {
-		return ptr.get();
+		return ptr;
 	}
 
 	T* addref() {
 		auto r = count.AddRef();
 		std::cout << ptr << "++ : " << r << std::endl;
-		return ptr.get();
+		return ptr;
 	}
 
 	void release() {
@@ -78,7 +88,7 @@ public:
 		return count.Count();
 	}
 private:
-	std::unique_ptr<T> ptr;
+	T* ptr;
 	ref_count count;
 };
 
@@ -182,7 +192,8 @@ public:
 	void insert(const std::string& tag, std::unique_ptr<T> res) {
 		RID rid = res->id();
 		tag_map.insert_or_assign(tag, rid);
-		auto v = map.insert_or_assign(rid, resource_owner<T>(std::move(res)));
+		map.insert_or_assign(rid, std::move(res));
+		//auto v = map.insert_or_assign(rid, resource_owner<T>{std::move(res)});
 		//map.insert({ res->id(), std::move(res)});
 	}
 

@@ -7,6 +7,8 @@
 #include <SDL3/SDL.h>
 
 
+
+
 #if _DEBUG
 #include <dxgidebug.h>
 #endif
@@ -19,6 +21,7 @@
 constexpr uint32_t defaultWindowWidth = 800;
 constexpr uint32_t defaultWindowHeight = 600;
 
+#pragma region Opaque Pointer Implementations
 struct Shader::ShaderImpl {
 
 	ShaderImpl(ComPtr<ID3D11PixelShader> pixelShader, ComPtr<ID3D11VertexShader> vertexShader, const VertexLayout& layout) : d3dPixelShader(pixelShader), d3dVertexShader(vertexShader), layout(layout) {
@@ -45,17 +48,11 @@ struct Shader::ShaderImpl {
 
 struct Mesh::MeshImpl{
 
-	void Bind(ID3D11DeviceContext4* deviceContext) {
-		uint32_t stride = sizeof(GVertex);
-		uint32_t offset = 0;
-
-		deviceContext->IASetVertexBuffers(0, 1, d3dVertexBuffer.GetAddressOf(), &stride, &offset);
-	}
 	void Render(ID3D11DeviceContext4* deviceContext, int index)
 	{
 		deviceContext->IASetIndexBuffer(subMeshes[index].indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 		deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		deviceContext->DrawIndexed(subMeshes[index].indexCount, 0, 0);
+		deviceContext->DrawIndexed(static_cast<UINT>(subMeshes[index].indexCount), 0, 0);
 
 	}
 	void Reset() {
@@ -67,18 +64,49 @@ struct Mesh::MeshImpl{
 		}
 	}
 	//vertex data
-	ComPtr<ID3D11Buffer> d3dVertexBuffer;
+	ComPtr<ID3D11Buffer> d3dVertexBuffer = nullptr;
 
-	size_t vertexCount;
+	size_t stride = 0; //stride
+	size_t vertexCount = 0;
 
 
 	struct index_group {
 		ComPtr<ID3D11Buffer> indexBuffer = nullptr;
 		size_t indexCount = 0;
 	};
-	std::unique_ptr<index_group[]> subMeshes;
-	size_t subMeshCount;
+	std::unique_ptr<index_group[]> subMeshes = nullptr;
+	size_t subMeshCount = 0;
 };
+
+
+struct Texture::TextureImpl {
+	ComPtr<ID3D11ShaderResourceView> srv;
+};
+
+
+Shader::Shader(ShaderImpl* impl)
+{
+	this->impl = std::unique_ptr<ShaderImpl>(impl);
+}
+
+Shader::~Shader() = default;
+
+Mesh::Mesh(MeshImpl* impl)
+{
+	this->impl = std::unique_ptr<MeshImpl>(impl);
+}
+
+Mesh::~Mesh() = default;
+
+
+Texture::Texture(TextureImpl* impl)
+{
+	this->impl = std::unique_ptr<TextureImpl>(impl);
+}
+
+Texture::~Texture() = default;
+
+#pragma endregion
 
 gfx_err Graphics::Initialise() {
 	//init window with SDL
@@ -99,6 +127,11 @@ gfx_err Graphics::Initialise() {
 		err::ErrorWithMessage(L"SDL Error");
 		return gfx_err::CONFIG_ERROR;
 	}
+
+	UINT dpi = GetDpiForWindow(hwnd);
+
+	uint32_t dpiWidth = dpi * defaultWindowWidth / USER_DEFAULT_SCREEN_DPI;
+	uint32_t dpiHeight = dpi * defaultWindowHeight / USER_DEFAULT_SCREEN_DPI;
 
 	HRESULT hr;
 
@@ -154,7 +187,7 @@ gfx_err Graphics::Initialise() {
 	d3dSwapChainDesc.SampleDesc.Quality = 0;
 	d3dSwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	d3dSwapChainDesc.BufferCount = 2; //use double buffering
-	d3dSwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT::DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	d3dSwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT::DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 	d3dSwapChainDesc.Scaling = DXGI_SCALING::DXGI_SCALING_NONE;
 	d3dSwapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
@@ -174,7 +207,6 @@ gfx_err Graphics::Initialise() {
 
 
 	ComPtr<IDXGISwapChain1> tmpD3dSwapChain;
-
 	hr = pIDXGIFactory->CreateSwapChainForHwnd(
 		d3dDevice.Get(),
 		hwnd,
@@ -183,6 +215,10 @@ gfx_err Graphics::Initialise() {
 		NULL,
 		&tmpD3dSwapChain);
 
+	err::ThrowOnFail(
+		pDXGIDevice->SetMaximumFrameLatency(1)
+	);
+
 	if (FAILED(hr)) {
 		err::ErrorWithMessage(L"Failed to create Swapchain", L"D3D Error");
 		return gfx_err::CONFIG_ERROR;
@@ -190,10 +226,49 @@ gfx_err Graphics::Initialise() {
 
 	err::ThrowOnFail(tmpD3dSwapChain->QueryInterface(d3dSwapChain.GetAddressOf()));
 
+	CD3D11_SAMPLER_DESC samplerDesc{ CD3D11_DEFAULT() };
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+
+
+	err::ThrowOnFail(
+		d3dDevice->CreateSamplerState(
+			&samplerDesc,
+			&d3dSamplerState));
+
+
+
+	D3D11_BLEND_DESC blendStateDesc;
+	ZeroMemory(&blendStateDesc, sizeof(D3D11_BLEND_DESC));
+	blendStateDesc.AlphaToCoverageEnable = FALSE;
+	blendStateDesc.IndependentBlendEnable = FALSE;
+	blendStateDesc.RenderTarget[0].BlendEnable = TRUE;
+	blendStateDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	blendStateDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	blendStateDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	blendStateDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
+	blendStateDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_DEST_ALPHA;
+	blendStateDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	blendStateDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	err::ThrowOnFail(
+		d3dDevice->CreateBlendState(&blendStateDesc, d3dBlendStateAlpha.GetAddressOf())
+	);
+
+
+	//init d2d before window resources so we can pass the created idxgisurface
+	ComPtr<IDXGIDevice> dxgiDevice;
+	d3dDevice->QueryInterface(dxgiDevice.GetAddressOf());
+	gfx2d.Initialise(dxgiDevice);
+
 
 	if (!DXUpdateWindowResources()) {
 		return gfx_err::BACKEND_ERROR;
 	}
+
+
+
 
 	return gfx_err::OK;
 }
@@ -236,8 +311,9 @@ gfx_err Graphics::Destroy() {
 	return gfx_err::OK;
 }
 
+#pragma region Rendering
 
-void Graphics::Render()
+gfx_err Graphics::BeginRender()
 {
 	//prepare frame for render
 
@@ -246,25 +322,98 @@ void Graphics::Render()
 	d3dDeviceContext->OMSetRenderTargets(1, targets, d3dDepthStencilView.Get());
 	d3dDeviceContext->ClearDepthStencilView(d3dDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
+	d3dDeviceContext->PSSetSamplers(0, 1, d3dSamplerState.GetAddressOf());
+
 
 	const float ClearColor[4] = { 0.5f, 0.5f, 0.8f, 1.0f };
 	d3dDeviceContext->ClearRenderTargetView(d3dRenderTargetView.Get(), ClearColor);
 
 
+
+	return gfx_err::OK;
+}
+
+gfx_err Graphics::EndRender() {
+
+	gfx2d.Render();
 	d3dSwapChain->Present(0, 0);
+
+	return gfx_err::OK;
 }
 
 
-std::unique_ptr<Shader> Graphics::LoadShader(const std::string& vertex, const std::string& fragment, const VertexLayout* layout) {
-	const std::wstring wvert = std::wstring(vertex.begin(), vertex.end());
-	ComPtr<ID3D11VertexShader> vs = DXCreateGVertexVertexShader(wvert);
 
-	const std::wstring wpix = std::wstring(fragment.begin(), fragment.end());
-	ComPtr<ID3D11PixelShader> ps = DXCreatePixelShader(wpix);
+#pragma endregion
+
+gfx_err Graphics::SetTexture(Texture* texture, int slot)
+{
+	d3dDeviceContext->PSSetShaderResources(slot, 1, texture->inner()->srv.GetAddressOf());
+	return gfx_err();
+}
+
+
+void Graphics::EnableAlphaBlend()
+{
+	d3dDeviceContext->OMSetBlendState(d3dBlendStateAlpha.Get(), NULL, 0xFFFFFF);
+	ID3D11RenderTargetView* const targets[1] = { d3dRenderTargetView.Get() };
+	d3dDeviceContext->OMSetRenderTargets(1, targets, nullptr);
+}
+void Graphics::DisableAlphaBlend()
+{
+	d3dDeviceContext->OMSetBlendState(NULL, NULL, 0xFFFFFFFF);
+	ID3D11RenderTargetView* const targets[1] = { d3dRenderTargetView.Get() };
+	d3dDeviceContext->OMSetRenderTargets(1, targets, d3dDepthStencilView.Get());
+}
+
+void Graphics::DXBindD2dTexture()
+{
+	//d3dDeviceContext->PSSetShaderResources(0, 1, d2dShaderResourceView.GetAddressOf());
+}
+
+
+gfx_err Graphics::SetShader(Shader* shader) {
+	if (shader == nullptr) return gfx_err::NULL_ERROR;
+	Shader::ShaderImpl* impl = shader->inner();
+	d3dDeviceContext->VSSetShader(impl->d3dVertexShader.Get(), nullptr, 0);
+	d3dDeviceContext->PSSetShader(impl->d3dPixelShader.Get(), nullptr, 0);
+
+	if (currentVertexLayout == nullptr || (currentVertexLayout->layout() != impl->Layout().layout())) {
+		currentVertexLayout = &impl->Layout();
+		d3dDeviceContext->IASetInputLayout(currentVertexLayout->layout());
+	}
+	return gfx_err::OK;
+}
+
+gfx_err Graphics::RenderMesh(Mesh* mesh, int subMesh) {
+	if (mesh == nullptr) return gfx_err::NULL_ERROR;
+	Mesh::MeshImpl* impl = mesh->inner();
+	UINT stride = static_cast<UINT>(impl->stride);
+	UINT offset = 0;
+	//bind mesh
+	d3dDeviceContext->IASetVertexBuffers(0, 1, impl->d3dVertexBuffer.GetAddressOf(), &stride, &offset);
+
+	//bind vertices
+	d3dDeviceContext->IASetIndexBuffer(impl->subMeshes[subMesh].indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+	d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	d3dDeviceContext->DrawIndexed(static_cast<UINT>(impl->subMeshes[subMesh].indexCount), 0, 0);
+
+	return gfx_err::OK;
+}
+
+
+std::unique_ptr<Shader> Graphics::LoadShader(const std::string& vertex, const std::string& fragment, VertexLayout* layout) {
+
 
 	if (layout == nullptr) {
 		layout = &d3dGvertexLayout;
 	}
+
+	const std::wstring wvert = std::wstring(vertex.begin(), vertex.end());
+	ComPtr<ID3D11VertexShader> vs = DXCreateVertexShader(wvert, layout);
+
+	const std::wstring wpix = std::wstring(fragment.begin(), fragment.end());
+	ComPtr<ID3D11PixelShader> ps = DXCreatePixelShader(wpix);
+
 	return DXCreateShader(vs, ps, *layout);
 }
 
@@ -276,6 +425,15 @@ std::unique_ptr<Shader> Graphics::DXCreateShader(ComPtr<ID3D11VertexShader> vert
 
 bool Graphics::DXCompileShader(const std::wstring& fileName, const std::string& entryPoint, const std::string& profile, ComPtr<ID3DBlob>& shaderBlob)
 {
+	//precompiled .cso file
+	if (fileName.substr(fileName.length() - 4) == L".cso") {
+		if (FAILED(D3DReadFileToBlob(fileName.data(), &shaderBlob))) {
+			std::cout << "D3D11: Failed to load precompiled shader from file\n";
+			return false;
+		}
+
+		return true;
+	}
 
 	constexpr UINT compileFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 
@@ -372,23 +530,22 @@ ComPtr<ID3D11PixelShader> Graphics::DXCreatePixelShader(const std::wstring& file
 	return pixelShader;
 }
 
-
-std::unique_ptr<Mesh> Graphics::CreateMesh(std::vector<float>& vertices, int subMeshCount)
-{
+std::unique_ptr<Mesh> Graphics::CreateMeshFlat(void* vertices, size_t count, size_t stride, int subMeshCount) {
 	Mesh::MeshImpl* mesh = new Mesh::MeshImpl;
-	mesh->vertexCount = vertices.size();
+	mesh->vertexCount = count;
 	mesh->subMeshCount = subMeshCount;
 	mesh->subMeshes = std::make_unique<Mesh::MeshImpl::index_group[]>(subMeshCount);
+	mesh->stride = stride;
 
 	D3D11_BUFFER_DESC bd = { 0 };
 	D3D11_SUBRESOURCE_DATA initData = { 0 };
 
 	//create vertex buffer
-	bd.Usage = D3D11_USAGE_DEFAULT; //regular usage, no streaming or weirdness
-	bd.ByteWidth = sizeof(GVertex) * mesh->vertexCount;
+	bd.Usage = D3D11_USAGE::D3D11_USAGE_IMMUTABLE; //regular usage, no streaming or weirdness
+	bd.ByteWidth = static_cast<UINT>(stride * mesh->vertexCount);
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; //bind vertexes to vertex buffer
 	bd.CPUAccessFlags = 0;
-	initData.pSysMem = vertices.data(); //attach data
+	initData.pSysMem = vertices; //attach data
 
 	err::ThrowOnFail(
 		d3dDevice->CreateBuffer(&bd, &initData, &mesh->d3dVertexBuffer)
@@ -411,7 +568,7 @@ void Graphics::SetSubMesh(const std::unique_ptr<Mesh>& mesh, const int subMesh, 
 	D3D11_SUBRESOURCE_DATA initData = { 0 };
 	//create index buffer
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(uint32_t) * indices.size();
+	bd.ByteWidth = static_cast<UINT>(sizeof(uint32_t) * indices.size());
 	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	bd.CPUAccessFlags = 0;
 	initData.pSysMem = indices.data();
@@ -468,6 +625,11 @@ bool Graphics::DXCreateRenderTarget() {
 		return false;
 	}
 
+	ComPtr<IDXGISurface> d2dSurface;
+	d3dRenderTarget->QueryInterface(d2dSurface.ReleaseAndGetAddressOf());
+
+	gfx2d.UpdateTarget(d2dSurface);
+
 	return true;
 }
 
@@ -475,6 +637,8 @@ void Graphics::DXDestroyRenderTarget()
 {
 	d3dRenderTarget.Reset();
 	d3dRenderTargetView.Reset();
+
+	gfx2d.DestroyTarget();
 }
 
 bool Graphics::DXUpdateWindowResources()
@@ -545,21 +709,38 @@ bool Graphics::DXUpdateWindowResources()
 
 	d3dDeviceContext->RSSetViewports(1, &d3dViewport);
 
+
+	////Create surface to write to with d2d
+	//d3dD2dTexture.Reset();
+	//d2dSurface.Reset();
+	//d2dShaderResourceView.Reset();
+
+	//CD3D11_TEXTURE2D_DESC d2dTexDesc{
+	//	DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM,
+	//	windowWidth,
+	//	windowHeight,
+	//	1,
+	//	1
+	//};
+
+
+
+	//d3dDevice->CreateTexture2D(&d2dTexDesc, nullptr,d3dD2dTexture.ReleaseAndGetAddressOf());
+
+	//d3dD2dTexture->QueryInterface(d2dSurface.ReleaseAndGetAddressOf());
+
+
+	//CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(d3dD2dTexture.Get(),D3D11_SRV_DIMENSION_TEXTURE2D);
+
+	//d3dDevice->CreateShaderResourceView(d3dD2dTexture.Get(), &srvDesc, d2dShaderResourceView.ReleaseAndGetAddressOf());
+
+
+
+	//finally, pass into Graphics2D
+	//gfx2d.UpdateTarget(d2dSurface);
+
 	return true;
 }
 
 #pragma endregion
 
-Shader::Shader( ShaderImpl* impl)
-{
-	this->impl = std::unique_ptr<ShaderImpl>(impl);
-}
-
-Shader::~Shader() = default;
-
-Mesh::Mesh(MeshImpl* impl)
-{
-	this->impl = std::unique_ptr<MeshImpl>(impl);
-}
-
-Mesh::~Mesh() = default;

@@ -1,7 +1,8 @@
 #pragma once
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11_4.h>
-#include <wrl/client.h>
+
+#include "GraphicsDef.h"
 #include <string>
 
 #include <SDL3/SDL_video.h>
@@ -10,13 +11,12 @@
 #include <memory>
 #include "Resource.h"
 
-template <typename T>
-using ComPtr = Microsoft::WRL::ComPtr<T>;
-
+#include "Graphics2D.h"
 
 using namespace DirectX;
 
 using POSITION = ::XMFLOAT3;
+using COLOUR = ::XMFLOAT3;
 using NORMAL = ::XMFLOAT3;
 using TEXCOORD = ::XMFLOAT2;
 using TANGENT = ::XMFLOAT3;
@@ -69,11 +69,27 @@ public:
 		_layout.Reset();
 	}
 
+	bool operator==(VertexLayout& other) {
+		return _layout.Get() == other._layout.Get();
+	}
+	bool operator!=(VertexLayout& other) {
+		return _layout.Get() != other._layout.Get();
+	}
+
+	bool operator==(const VertexLayout& other) {
+		return _layout.Get() == other._layout.Get();
+	}
+	bool operator!=(const VertexLayout& other) {
+		return _layout.Get() != other._layout.Get();
+	}
+
 private:
 	ComPtr<ID3D11InputLayout> _layout = nullptr;
 	std::unique_ptr<D3D11_INPUT_ELEMENT_DESC[]> _desc;
 	size_t _size;
 };
+
+
 
 //standard game vertex
 struct GVertex
@@ -98,13 +114,21 @@ static D3D11_INPUT_ELEMENT_DESC GVertexLayout[] =
 
 
 
-enum class gfx_err {
-	OK = 0,
-	CONFIG_ERROR,
-	BACKEND_ERROR,
-	UNKNOWN
-};
 
+
+class Texture : public IResource {
+public:
+	struct TextureImpl;
+	Texture(TextureImpl* impl);
+	~Texture();
+
+	TextureImpl* inner() {
+		return impl.get();
+	}
+private:
+
+	std::unique_ptr<TextureImpl> impl;
+};
 
 
 class Mesh : public IResource {
@@ -113,8 +137,6 @@ public:
 	Mesh(MeshImpl* impl);
 	~Mesh();
 
-
-
 	MeshImpl* inner() {
 		return impl.get();
 	}
@@ -122,6 +144,8 @@ private:
 
 	std::unique_ptr<MeshImpl> impl;
 };
+
+
 class Shader : public IResource {
 public:
 	struct ShaderImpl;
@@ -136,10 +160,9 @@ private:
 };
 
 
-
-
 class Graphics
 {
+	friend class RenderComponent;
 public:
 	gfx_err Initialise();
 
@@ -148,20 +171,47 @@ public:
 
 	gfx_err Destroy();
 
-	void Render();
+	gfx_err BeginRender();
+	gfx_err EndRender();
+	gfx_err SetTexture(Texture* texture, int slot = 0);
+	gfx_err SetShader(Shader* shader);
+	gfx_err RenderMesh(Mesh* mesh, int subMesh = 0);
+
+	std::unique_ptr<Shader> LoadShader(const std::string& vertex, const std::string& fragment, VertexLayout* layout);
+
+	std::unique_ptr<Texture> LoadTexture(const std::string& file);
 
 
-	std::unique_ptr<Shader> LoadShader(const std::string& vertex, const std::string& fragment, const VertexLayout* layout);
-
+	void EnableAlphaBlend();
+	void DisableAlphaBlend();
+	void DXBindD2dTexture();
 
 	std::unique_ptr<Shader> DXCreateShader(ComPtr<ID3D11VertexShader> vertex, ComPtr<ID3D11PixelShader> pixel, const VertexLayout& layout);
 	ComPtr<ID3D11VertexShader> DXCreateGVertexVertexShader(const std::wstring& fileName);
 	ComPtr<ID3D11VertexShader> DXCreateVertexShader(const std::wstring& fileName, VertexLayout* layout);
 	ComPtr<ID3D11PixelShader> DXCreatePixelShader(const std::wstring& fileName);
 
-	std::unique_ptr<Mesh> CreateMesh(std::vector<float>& vertices, int subMeshCount = 1);
+	std::unique_ptr<Mesh> CreateMeshFlat(void* vertices, size_t count, size_t stride, int subMeshCount = 1);
+	template<typename VertexType>
+	std::unique_ptr<Mesh> CreateMesh(std::vector<VertexType>& vertices, int subMeshCount = 1)
+	{
+		return CreateMeshFlat(vertices.data(), vertices.size(), sizeof(VertexType), subMeshCount);
+	}
 
 	void SetSubMesh(const std::unique_ptr<Mesh>& mesh, const int subMesh, std::vector<uint32_t>& indices);
+
+	bool GetFullscreen() {
+		BOOL fullscreen;
+		d3dSwapChain->GetFullscreenState(&fullscreen,nullptr);
+		return fullscreen;
+	}
+	void SetFullscreen(bool value) {
+		d3dSwapChain->SetFullscreenState(value, nullptr);
+	}
+
+	SDL_Window* SdlWindow() const {
+		return sdlWindow;
+	}
 
 	const uint32_t WindowWidth() const noexcept{
 		return windowWidth;
@@ -171,9 +221,13 @@ public:
 	}
 	void DXReportLiveObjects();
 
+
 private:
 	//SDL resources
 	SDL_Window* sdlWindow = nullptr;
+
+	//2D Renderer
+	Graphics2D gfx2d;
 
 	//DX11 resources
 	HWND hwnd = nullptr;
@@ -184,7 +238,12 @@ private:
 	ComPtr<ID3D11RenderTargetView1> d3dRenderTargetView = nullptr;
 	ComPtr<ID3D11Texture2D> d3dDepthStencil = nullptr;
 	ComPtr<ID3D11DepthStencilView> d3dDepthStencilView = nullptr;
+	ComPtr<ID3D11SamplerState> d3dSamplerState = nullptr;
+	ComPtr<ID3D11BlendState> d3dBlendStateAlpha = nullptr;
+
+	//Render state
 	VertexLayout d3dGvertexLayout{ GVertexLayout };
+	const VertexLayout* currentVertexLayout = nullptr;
 	D3D11_VIEWPORT d3dViewport{ 0,0,0,0 };
 
 
@@ -209,4 +268,3 @@ private:
 	bool DXUpdateWindowResources();
 
 };
-
