@@ -83,7 +83,4 @@
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Manifest Include="DeclareDPIAware.manifest" />
-  </ItemGroup>
 </Project>

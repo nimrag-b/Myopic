@@ -425,9 +425,11 @@ std::unique_ptr<Shader> Graphics::DXCreateShader(ComPtr<ID3D11VertexShader> vert
 
 bool Graphics::DXCompileShader(const std::wstring& fileName, const std::string& entryPoint, const std::string& profile, ComPtr<ID3DBlob>& shaderBlob)
 {
+	HRESULT hr;
 	//precompiled .cso file
 	if (fileName.substr(fileName.length() - 4) == L".cso") {
-		if (FAILED(D3DReadFileToBlob(fileName.data(), &shaderBlob))) {
+		hr = D3DReadFileToBlob(fileName.c_str(), &shaderBlob);
+		if (FAILED(hr)) {
 			std::cout << "D3D11: Failed to load precompiled shader from file\n";
 			return false;
 		}

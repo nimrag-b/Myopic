@@ -24,7 +24,7 @@ private:
 	ComPtr<ID2D1Bitmap1> d2dTargetBitmap = nullptr;
 
 	ComPtr<ID2D1RenderTarget> d2dRenderTarget = nullptr;
-	ComPtr<IDWriteFactory8> d2dDwriteFactory = nullptr;
+	ComPtr<IDWriteFactory1> d2dDwriteFactory = nullptr;
 	ComPtr<IDWriteTextFormat> d2dTextFormat = nullptr;
 
 	unsigned int width;
