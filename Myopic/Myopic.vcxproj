@@ -142,22 +142,34 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Error.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="Graphics2D.cpp" />
+    <ClCompile Include="Material.cpp" />
     <ClCompile Include="Myopic.cpp" />
     <ClCompile Include="Resource.cpp" />
     <ClCompile Include="Assets.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="GameError.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="Graphics2D.h" />
     <ClInclude Include="GraphicsDef.h" />
+    <ClInclude Include="Material.h" />
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Assets.h" />
+    <ClInclude Include="ResourceLocation.h" />
+    <ClInclude Include="Shader.h" />
+    <ClInclude Include="Texture.h" />
+    <ClInclude Include="_dxtypeimpl.h" />
   </ItemGroup>
   <ItemGroup>
+    <CopyFileToFolders Include="heavy.naf">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
     <None Include="ShaderHeader.hlsli" />
   </ItemGroup>
   <ItemGroup>
@@ -205,6 +217,11 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
       <DeploymentContent>true</DeploymentContent>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="heavy_head.png" />
+    <CopyFileToFolders Include="hvyweapon_normal.png" />
+    <CopyFileToFolders Include="hvyweapon_red.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

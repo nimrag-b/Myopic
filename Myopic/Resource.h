@@ -189,6 +189,15 @@ class Registry {
 	static_assert(std::is_base_of<IResource, T>::value);
 public:
 
+	void set_err_path(const std::string& path) {
+		err_path = path;
+
+	}
+
+	bool contains(const std::string& tag) {
+		return tag_map.contains(tag);
+	}
+
 	void insert(const std::string& tag, std::unique_ptr<T> res) {
 		RID rid = res->id();
 		tag_map.insert_or_assign(tag, rid);
@@ -213,10 +222,11 @@ public:
 		if (map.contains(id)) {
 			return map.at(id);
 		}
-		return nullptr;
+		return map.at(get_rid(err_path));
 	}
 
 private:
+	std::string err_path;
 	std::unordered_map<std::string, RID> tag_map;
 	std::unordered_map< RID, resource_owner<T>> map;
 };

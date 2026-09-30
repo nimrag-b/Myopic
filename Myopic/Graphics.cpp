@@ -4,6 +4,8 @@
 #include <comdef.h>
 #include <d3dcompiler.h>
 
+#include "_dxtypeimpl.h"
+
 #include <SDL3/SDL.h>
 
 
@@ -21,92 +23,7 @@
 constexpr uint32_t defaultWindowWidth = 800;
 constexpr uint32_t defaultWindowHeight = 600;
 
-#pragma region Opaque Pointer Implementations
-struct Shader::ShaderImpl {
 
-	ShaderImpl(ComPtr<ID3D11PixelShader> pixelShader, ComPtr<ID3D11VertexShader> vertexShader, const VertexLayout& layout) : d3dPixelShader(pixelShader), d3dVertexShader(vertexShader), layout(layout) {
-
-	}
-
-	const VertexLayout& Layout() const {
-		return layout;
-	}
-
-	void Bind(ID3D11DeviceContext4* deviceContext) const {
-		deviceContext->VSSetShader(d3dVertexShader.Get(), nullptr, 0);
-		deviceContext->PSSetShader(d3dPixelShader.Get(), nullptr, 0);
-	}
-	void Reset() {
-		d3dPixelShader.Reset();
-		d3dVertexShader.Reset();
-	}
-
-	ComPtr<ID3D11PixelShader> d3dPixelShader;
-	ComPtr<ID3D11VertexShader> d3dVertexShader;
-	const VertexLayout& layout;
-};
-
-struct Mesh::MeshImpl{
-
-	void Render(ID3D11DeviceContext4* deviceContext, int index)
-	{
-		deviceContext->IASetIndexBuffer(subMeshes[index].indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-		deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		deviceContext->DrawIndexed(static_cast<UINT>(subMeshes[index].indexCount), 0, 0);
-
-	}
-	void Reset() {
-		d3dVertexBuffer.Reset();
-
-		for (size_t i = 0; i < subMeshCount; i++)
-		{
-			subMeshes[i].indexBuffer.Reset();
-		}
-	}
-	//vertex data
-	ComPtr<ID3D11Buffer> d3dVertexBuffer = nullptr;
-
-	size_t stride = 0; //stride
-	size_t vertexCount = 0;
-
-
-	struct index_group {
-		ComPtr<ID3D11Buffer> indexBuffer = nullptr;
-		size_t indexCount = 0;
-	};
-	std::unique_ptr<index_group[]> subMeshes = nullptr;
-	size_t subMeshCount = 0;
-};
-
-
-struct Texture::TextureImpl {
-	ComPtr<ID3D11ShaderResourceView> srv;
-};
-
-
-Shader::Shader(ShaderImpl* impl)
-{
-	this->impl = std::unique_ptr<ShaderImpl>(impl);
-}
-
-Shader::~Shader() = default;
-
-Mesh::Mesh(MeshImpl* impl)
-{
-	this->impl = std::unique_ptr<MeshImpl>(impl);
-}
-
-Mesh::~Mesh() = default;
-
-
-Texture::Texture(TextureImpl* impl)
-{
-	this->impl = std::unique_ptr<TextureImpl>(impl);
-}
-
-Texture::~Texture() = default;
-
-#pragma endregion
 
 gfx_err Graphics::Initialise() {
 	//init window with SDL
@@ -226,6 +143,35 @@ gfx_err Graphics::Initialise() {
 
 	err::ThrowOnFail(tmpD3dSwapChain->QueryInterface(d3dSwapChain.GetAddressOf()));
 
+
+
+	//Buffers
+
+	CD3D11_BUFFER_DESC constantBufferDesc(sizeof(ConstantDataBuffer), D3D11_BIND_CONSTANT_BUFFER);
+	err::ThrowOnFail(
+		d3dDevice.Get()->CreateBuffer(
+			&constantBufferDesc,
+			nullptr,
+			&d3dConstantDataBuffer
+		));
+	CD3D11_BUFFER_DESC frameBufferDesc(sizeof(FrameDataBuffer), D3D11_BIND_CONSTANT_BUFFER);
+	err::ThrowOnFail(
+		d3dDevice.Get()->CreateBuffer(
+			&frameBufferDesc,
+			nullptr,
+			&d3dFrameDataBuffer
+		));
+	CD3D11_BUFFER_DESC objectBufferDesc(sizeof(ObjectDataBuffer), D3D11_BIND_CONSTANT_BUFFER);
+	err::ThrowOnFail(
+		d3dDevice.Get()->CreateBuffer(
+			&objectBufferDesc,
+			nullptr,
+			&d3dObjectDataBuffer
+		));
+
+
+
+
 	CD3D11_SAMPLER_DESC samplerDesc{ CD3D11_DEFAULT() };
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -318,16 +264,71 @@ gfx_err Graphics::BeginRender()
 	//prepare frame for render
 
 
+	//set render target
 	ID3D11RenderTargetView* const targets[1] = { d3dRenderTargetView.Get() };
 	d3dDeviceContext->OMSetRenderTargets(1, targets, d3dDepthStencilView.Get());
+
+	//clear depth buffer
 	d3dDeviceContext->ClearDepthStencilView(d3dDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+
+	//clear render target
+	const float ClearColor[4] = { 0.5f, 0.5f, 0.8f, 1.0f };
+	d3dDeviceContext->ClearRenderTargetView(d3dRenderTargetView.Get(), ClearColor);
+
+
+	d3dDeviceContext->VSSetConstantBuffers(0, 1, d3dConstantDataBuffer.GetAddressOf());
+	d3dDeviceContext->VSSetConstantBuffers(1, 1, d3dFrameDataBuffer.GetAddressOf());
+	d3dDeviceContext->VSSetConstantBuffers(2, 1, d3dObjectDataBuffer.GetAddressOf());
+	//d3dContext->VSSetConstantBuffers(1, 1, m_constantBufferChangeOnResize.GetAddressOf());
+
+	d3dDeviceContext->PSSetConstantBuffers(0, 1, d3dConstantDataBuffer.GetAddressOf());
+	d3dDeviceContext->PSSetConstantBuffers(1, 1, d3dFrameDataBuffer.GetAddressOf());
+	d3dDeviceContext->PSSetConstantBuffers(2, 1, d3dObjectDataBuffer.GetAddressOf());
+
 
 	d3dDeviceContext->PSSetSamplers(0, 1, d3dSamplerState.GetAddressOf());
 
 
-	const float ClearColor[4] = { 0.5f, 0.5f, 0.8f, 1.0f };
-	d3dDeviceContext->ClearRenderTargetView(d3dRenderTargetView.Get(), ClearColor);
 
+	// Prepare the constant buffer to send it to the graphics device.
+
+	d3dDeviceContext->UpdateSubresource(d3dConstantDataBuffer.Get(), 0, nullptr, &contantDataBuffer, 0, 0);
+
+	// Prepare the frame buffer to send it to the graphics device.
+
+	//update view matrix
+	FrameDataBuffer frameData; //buffer of things that change every frame to be pushed, mostly camera stuff
+
+	DirectX::XMStoreFloat4x4(&frameData.projection, projection);
+
+	//DirectX::XMStoreFloat4x4(&frameData.view, DirectX::XMMatrixLookAtRH({ 0,0,0 }, { 0,0,-1 }, { 0,1,0 }));
+	DirectX::XMStoreFloat4x4(&frameData.view, camera.GetView());
+
+	//XMFLOAT3 lightPos;
+	//GetLightMatrix(lightDirection, &frameData.lightView, &frameData.lightProjection, &lightPos);
+
+	frameData.viewPos = camera.Position();
+
+	d3dDeviceContext->UpdateSubresource(d3dFrameDataBuffer.Get(), 0, nullptr, &frameData, 0, 0);
+
+
+	ObjectDataBuffer objectData;
+
+	XMMATRIX xmm = DirectX::XMMatrixScaling(0.2f, 0.2f, 0.2f) * DirectX::XMMatrixTranslation(0, -10, 20);
+
+	//store the model matrix in the correct spot
+	DirectX::XMStoreFloat4x4(
+		&objectData.worldMatrix,
+		XMMatrixTranspose(xmm)
+	);
+
+	objectData.meshColor = { 1,1,1,1 };
+	objectData.specular = 0.2f;
+	objectData.fresnelRange = { 0,0.5f,1 };
+
+
+	d3dDeviceContext.Get()->UpdateSubresource(d3dObjectDataBuffer.Get(), 0, nullptr, &objectData, 0, 0);
 
 
 	return gfx_err::OK;
@@ -345,10 +346,10 @@ gfx_err Graphics::EndRender() {
 
 #pragma endregion
 
-gfx_err Graphics::SetTexture(Texture* texture, int slot)
+gfx_err Graphics::SetTexture(const Texture* texture, int slot)
 {
 	d3dDeviceContext->PSSetShaderResources(slot, 1, texture->inner()->srv.GetAddressOf());
-	return gfx_err();
+	return gfx_err::OK;
 }
 
 
@@ -370,8 +371,42 @@ void Graphics::DXBindD2dTexture()
 	//d3dDeviceContext->PSSetShaderResources(0, 1, d2dShaderResourceView.GetAddressOf());
 }
 
+std::unique_ptr<Texture> Graphics::DXCreateTexture(void* pixels, int width, int height, int pitch, DXGI_FORMAT format)
+{
+	CD3D11_TEXTURE2D_DESC texDesc(
+		format,//DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM,
+		static_cast<UINT>(width),
+		static_cast<UINT>(height),
+		1,
+		1,
+		D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE
+	);
 
-gfx_err Graphics::SetShader(Shader* shader) {
+	D3D11_SUBRESOURCE_DATA initialData;
+	initialData.pSysMem = pixels;
+	initialData.SysMemPitch = pitch;
+	initialData.SysMemSlicePitch = 0;
+
+	ComPtr<ID3D11Texture2D> tex;
+	ComPtr<ID3D11ShaderResourceView> srv;
+
+	HRESULT hr = d3dDevice->CreateTexture2D(&texDesc, &initialData, tex.ReleaseAndGetAddressOf());
+
+
+	CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(
+		D3D11_SRV_DIMENSION_TEXTURE2D
+	);
+
+	hr = d3dDevice->CreateShaderResourceView(tex.Get(), &srvDesc, srv.ReleaseAndGetAddressOf());
+
+	Texture::TextureImpl* impl = new Texture::TextureImpl;
+	impl->srv = srv;
+
+	return std::make_unique<Texture>(impl);
+}
+
+
+gfx_err Graphics::SetShader(const Shader* shader) {
 	if (shader == nullptr) return gfx_err::NULL_ERROR;
 	Shader::ShaderImpl* impl = shader->inner();
 	d3dDeviceContext->VSSetShader(impl->d3dVertexShader.Get(), nullptr, 0);
@@ -384,7 +419,20 @@ gfx_err Graphics::SetShader(Shader* shader) {
 	return gfx_err::OK;
 }
 
-gfx_err Graphics::RenderMesh(Mesh* mesh, int subMesh) {
+gfx_err Graphics::SetMaterial(const Material* material, ObjectDataBuffer& buffer)
+{
+	SetShader(material->shader);
+	SetTexture(material->texture, 0);
+	SetTexture(material->normal, 1);
+
+	buffer.fresnelRange = material->fresnelRange;
+	buffer.meshColor = material->meshColour;
+	buffer.specular = material->specular;
+
+	return gfx_err::OK;
+}
+
+gfx_err Graphics::RenderMesh(const Mesh* mesh, int subMesh) {
 	if (mesh == nullptr) return gfx_err::NULL_ERROR;
 	Mesh::MeshImpl* impl = mesh->inner();
 	UINT stride = static_cast<UINT>(impl->stride);
@@ -712,34 +760,18 @@ bool Graphics::DXUpdateWindowResources()
 	d3dDeviceContext->RSSetViewports(1, &d3dViewport);
 
 
-	////Create surface to write to with d2d
-	//d3dD2dTexture.Reset();
-	//d2dSurface.Reset();
-	//d2dShaderResourceView.Reset();
+	float aspectRatio = static_cast<float>(windowWidth) / static_cast<float>(windowHeight);
+	float fovAngleY = 90.0f * DirectX::XM_PI / 180.0f;
 
-	//CD3D11_TEXTURE2D_DESC d2dTexDesc{
-	//	DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM,
-	//	windowWidth,
-	//	windowHeight,
-	//	1,
-	//	1
-	//};
+	// This sample makes use of a right-handed coordinate system using row-major matrices.
+	DirectX::XMMATRIX perspectiveMatrix = DirectX::XMMatrixPerspectiveFovRH(
+		fovAngleY,
+		aspectRatio,
+		0.01f,
+		5000.0f
+	);
 
-
-
-	//d3dDevice->CreateTexture2D(&d2dTexDesc, nullptr,d3dD2dTexture.ReleaseAndGetAddressOf());
-
-	//d3dD2dTexture->QueryInterface(d2dSurface.ReleaseAndGetAddressOf());
-
-
-	//CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(d3dD2dTexture.Get(),D3D11_SRV_DIMENSION_TEXTURE2D);
-
-	//d3dDevice->CreateShaderResourceView(d3dD2dTexture.Get(), &srvDesc, d2dShaderResourceView.ReleaseAndGetAddressOf());
-
-
-
-	//finally, pass into Graphics2D
-	//gfx2d.UpdateTarget(d2dSurface);
+	projection = DirectX::XMMatrixTranspose(perspectiveMatrix);
 
 	return true;
 }

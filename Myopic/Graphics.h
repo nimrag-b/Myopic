@@ -13,6 +13,14 @@
 
 #include "Graphics2D.h"
 
+#include "Camera.h"
+
+#include "Mesh.h"
+#include "Shader.h"
+#include "Texture.h"
+
+#include "Material.h"
+
 using namespace DirectX;
 
 using POSITION = ::XMFLOAT3;
@@ -116,48 +124,7 @@ static D3D11_INPUT_ELEMENT_DESC GVertexLayout[] =
 
 
 
-class Texture : public IResource {
-public:
-	struct TextureImpl;
-	Texture(TextureImpl* impl);
-	~Texture();
 
-	TextureImpl* inner() {
-		return impl.get();
-	}
-private:
-
-	std::unique_ptr<TextureImpl> impl;
-};
-
-
-class Mesh : public IResource {
-public:
-	struct MeshImpl;
-	Mesh(MeshImpl* impl);
-	~Mesh();
-
-	MeshImpl* inner() {
-		return impl.get();
-	}
-private:
-
-	std::unique_ptr<MeshImpl> impl;
-};
-
-
-class Shader : public IResource {
-public:
-	struct ShaderImpl;
-	Shader(ShaderImpl* impl);
-	~Shader();
-	ShaderImpl* inner() {
-		return impl.get();
-	}
-private:
-
-	std::unique_ptr<ShaderImpl> impl;
-};
 
 
 class Graphics
@@ -173,18 +140,19 @@ public:
 
 	gfx_err BeginRender();
 	gfx_err EndRender();
-	gfx_err SetTexture(Texture* texture, int slot = 0);
-	gfx_err SetShader(Shader* shader);
-	gfx_err RenderMesh(Mesh* mesh, int subMesh = 0);
+	gfx_err SetTexture(const Texture* texture, int slot = 0);
+	gfx_err SetShader(const Shader* shader);
+	gfx_err SetMaterial(const Material* material, ObjectDataBuffer& buffer);
+	gfx_err RenderMesh(const Mesh* mesh, int subMesh = 0);
 
 	std::unique_ptr<Shader> LoadShader(const std::string& vertex, const std::string& fragment, VertexLayout* layout);
-
-	std::unique_ptr<Texture> LoadTexture(const std::string& file);
 
 
 	void EnableAlphaBlend();
 	void DisableAlphaBlend();
 	void DXBindD2dTexture();
+
+	std::unique_ptr<Texture> DXCreateTexture(void* pixels, int width, int height, int pitch, DXGI_FORMAT format);
 
 	std::unique_ptr<Shader> DXCreateShader(ComPtr<ID3D11VertexShader> vertex, ComPtr<ID3D11PixelShader> pixel, const VertexLayout& layout);
 	ComPtr<ID3D11VertexShader> DXCreateGVertexVertexShader(const std::wstring& fileName);
@@ -221,6 +189,9 @@ public:
 	}
 	void DXReportLiveObjects();
 
+	Camera& GetCamera() {
+		return camera;
+	}
 
 private:
 	//SDL resources
@@ -241,13 +212,18 @@ private:
 	ComPtr<ID3D11SamplerState> d3dSamplerState = nullptr;
 	ComPtr<ID3D11BlendState> d3dBlendStateAlpha = nullptr;
 
+	ComPtr<ID3D11Buffer> d3dConstantDataBuffer = nullptr;
+	ComPtr<ID3D11Buffer> d3dFrameDataBuffer = nullptr;
+	ComPtr<ID3D11Buffer> d3dObjectDataBuffer = nullptr;
+
 	//Render state
 	VertexLayout d3dGvertexLayout{ GVertexLayout };
 	const VertexLayout* currentVertexLayout = nullptr;
 	D3D11_VIEWPORT d3dViewport{ 0,0,0,0 };
+	ConstantDataBuffer contantDataBuffer;
+	Camera camera;
+	XMMATRIX projection;
 
-
-	//Render state
 	uint32_t windowWidth = 0;
 	uint32_t windowHeight = 0;
 

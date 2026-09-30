@@ -150,10 +150,16 @@ float4 main(PixelShaderInput input) : SV_Target
 
     float4 baseColor = meshTexture.Sample(MeshTextureSampler, input.texcoord);
     
+
+    
     float3 normal = normalTexture.Sample(MeshTextureSampler, input.texcoord).rgb;
+
     
     normal = normalize(normal * 2.0 - 1.0);
     normal = normalize(mul(input.TBN, normal));
+    
+        
+
     
     float3 viewDir = normalize(viewPos - input.world.xyz);
     

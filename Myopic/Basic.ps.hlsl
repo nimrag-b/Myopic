@@ -9,6 +9,11 @@ struct PSOutput
     float4 color : SV_Target0;
 };
 
+Texture2D meshTexture : register(t0);
+
+SamplerState MeshTextureSampler : register(s0);
+
+
 PSOutput main(PSInput input)
 {
     PSOutput output = (PSOutput) 0;

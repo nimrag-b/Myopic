@@ -73,6 +73,7 @@ std::vector<uint32_t> GUIindices = {
 
 
 int myopic() {
+
 	Graphics gfx;
 	gfx.Initialise();
 	Assets assets(gfx);
@@ -92,11 +93,25 @@ int myopic() {
 	assets.Register("Basic", gfx.LoadShader("shaders/Basic.vs.cso", "shaders/Basic.ps.cso", &basiclayout));
 	assets.Register("StandardLit", gfx.LoadShader("shaders/Main.vs.cso", "shaders/Main.ps.cso", nullptr));
 
+	assets.LoadMesh("myopic:heavy");
+
+	assets.LoadTexture("myopic:heavy_head");
+	assets.LoadTexture("myopic:hvyweapon_normal");
+	assets.LoadTexture("myopic:hvyweapon_red");
+
+
+	auto heavy = assets.Get<Mesh>("myopic:heavy");
+
+	auto stdShader = assets.Get<Shader>("StandardLit");
 	auto basicShader = assets.Get<Shader>("Basic");
 	auto quad = assets.Get<Mesh>("Quad");
 
 	auto guiShader = assets.Get<Shader>("GUI");
 	auto guiQuad = assets.Get<Mesh>("GUIQuad");
+
+	auto hvyweapon_red = assets.Get<Texture>("myopic:hvyweapon_red");
+	auto hvyweapon_normal = assets.Get<Texture>("myopic:hvyweapon_normal");
+
 
 
 	Uint64 LAST = SDL_GetTicksNS();
@@ -170,11 +185,22 @@ int myopic() {
 			}
 		}
 
+		//gfx.GetCamera().Rotate(1.0f * (float)delta, 0);
+
 		gfx.BeginRender();
 
+		
+		gfx.SetTexture(hvyweapon_red.get(), 0);
+		gfx.SetTexture(hvyweapon_normal.get(), 1);
 
-		gfx.SetShader(basicShader.get());
-		gfx.RenderMesh(quad.get());
+		gfx.SetShader(stdShader.get());
+		gfx.RenderMesh(heavy.get(), 0);
+		gfx.RenderMesh(heavy.get(), 1);
+		gfx.RenderMesh(heavy.get(), 2);
+		gfx.RenderMesh(heavy.get(), 3);
+		gfx.RenderMesh(heavy.get(), 4);
+		//gfx.SetShader(basicShader.get());
+		//gfx.RenderMesh(quad.get());
 
 
 		//gfx.EnableAlphaBlend();

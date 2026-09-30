@@ -46,9 +46,9 @@ gfx_err Graphics2D::Initialise(ComPtr<IDXGIDevice> dxgiDevice) {
 		)
 	);
 
-	d2dTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+	d2dTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
 
-	d2dTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+	d2dTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
 	return gfx_err::OK;
 }
