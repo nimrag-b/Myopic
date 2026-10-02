@@ -34,7 +34,8 @@ public:
 			return;
 		}
 
-		if (_path.find_first_not_of("abcdefghijklmnopqrstuvwxyz123456789_.") != std::string::npos) {
+		
+		if (std::find_if(_path.begin(), _path.end(), [](int ch) {return !(isalnum(ch) || ch == '_' || ch == '.'); }) != _path.end()) {
 			std::cout << "Invalid Path for path '" << path << "'" << std::endl;
 			SetError();
 			return;

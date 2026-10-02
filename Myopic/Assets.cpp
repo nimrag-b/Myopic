@@ -171,6 +171,13 @@ void Assets::LoadMesh(const ResourceLocation& tag)
 	throw load_error("File '" + path + "' does not exist");
 }
 
+
+struct mesh_part {
+	uint32_t material_index;
+	std::vector<float> verts;
+	std::vector<uint32_t> indices;
+};
+
 bool Assets::LoadModel(const ResourceLocation& tag)
 {
 	std::string path = tag.Filepath("meshes", ".nge");
@@ -192,7 +199,91 @@ bool Assets::LoadModel(const ResourceLocation& tag)
 	fs.read((char*)&version, sizeof(uint32_t));
 	fs.read((char*)&format, sizeof(uint32_t));
 
+	//for now we are on version one and the only format we support is GVERTEX so just exit if either is wrong
+	if (version != 1 || format != 1) {
+		return false;
+	}
 
+	//amount of submeshes contained in this file
+	uint32_t numMeshes;
+	fs.read((char*)&numMeshes, sizeof(uint32_t));
+
+	//unused space to be used later
+	uint32_t padding[4] = { 0 };
+	fs.read((char*)padding, sizeof(padding));
+
+	std::string header;
+	char next;
+
+	char buffer[40];
+
+	std::vector<mesh_part> parts(numMeshes);
+
+	mesh_part* current = nullptr;
+
+	while (1) {
+		fs >> next;
+
+		if (fs.eof()) break;
+
+		//all section headers must start with .
+		if (next != '.') {
+			return false;
+		}
+
+		//read section header
+		char* ptr = buffer;
+		while (next != 0) {
+			*ptr++ = next;
+			fs >> next;
+		}
+		*ptr = 0;
+		header = buffer;
+
+		std::cout << header << std::endl;
+
+		//new mesh
+		if (header == ".mesh") {
+
+			uint32_t mesh_index;
+			fs.read((char*)&mesh_index, sizeof(uint32_t));
+			current = &parts[mesh_index];
+
+
+			uint32_t material_index;
+			fs.read((char*)&material_index, sizeof(uint32_t));
+			current->material_index = material_index;
+			continue;
+		}
+
+		//other than setting a new mesh, there should never be no set mesh
+		if (current == nullptr) {
+			return false;
+		}
+
+		//read vertex data
+		if (header == ".vertex") {
+			uint32_t size; //size in bytes
+			fs.read((char*)&size, sizeof(uint32_t));
+			current->verts.resize(size);
+
+			fs.read((char*)current->verts.data(), size);
+			continue;
+		}
+
+		//read index data
+		if (header == ".index") {
+			uint32_t size; //size in bytes
+			fs.read((char*)&size, sizeof(uint32_t));
+			current->indices.resize(size);
+
+			fs.read((char*)current->indices.data(), size);
+			continue;
+		}
+
+	}
+
+	return true;
 }
 
 void Assets::CreateMaterial(const ResourceLocation& name, const MaterialDef& def)

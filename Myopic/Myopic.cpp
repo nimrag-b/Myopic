@@ -87,6 +87,10 @@ int myopic() {
 
 
 
+	assets.LoadModel("2B_Rip_v1_6_R");
+	return 0;
+
+
 	auto rawmesh = gfx.CreateMesh(vertices);
 	gfx.SetSubMesh(rawmesh, 0, indices);
 	assets.Register("Quad", std::move(rawmesh));

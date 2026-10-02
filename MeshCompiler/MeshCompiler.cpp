@@ -83,10 +83,10 @@ void GetMeshPart(const aiMesh* mesh, mesh_part* part) {
         //std::cout << " Tangent";
         //print_vec(mesh->mTangents[v]);
 
-        //tangents
-        verts.push_back(mesh->mBitangents[v].x);
-        verts.push_back(mesh->mBitangents[v].y);
-        verts.push_back(mesh->mBitangents[v].z);
+        //bitangents
+        //verts.push_back(mesh->mBitangents[v].x);
+        //verts.push_back(mesh->mBitangents[v].y);
+        //verts.push_back(mesh->mBitangents[v].z);
         //std::cout << " Bitangent";
         //print_vec(mesh->mBitangents[v]);
 
@@ -178,8 +178,6 @@ bool CompileToNGE(const std::string& outFile, std::vector<mesh_part>& parts) {
 
 
         //switch to next mesh
-        section_header(fs, ".mesh", i);
-
         static char mesh_section[] = ".mesh";
 
         fs.write(mesh_section, sizeof(mesh_section));
@@ -190,7 +188,7 @@ bool CompileToNGE(const std::string& outFile, std::vector<mesh_part>& parts) {
 
         fs.write((char*)mesh_props, sizeof(mesh_props));
 
-
+        //write sections
         section_header(fs, ".vertex", it.verts.size() * sizeof(float));
         fs.write((char*)it.verts.data(), it.verts.size() * sizeof(float));
 
