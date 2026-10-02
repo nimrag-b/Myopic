@@ -308,11 +308,22 @@ int main() {
 
 #define UNREFERENCED_PARAMETER(p) (p)
 
+//#define CREATECONSOLE
+
 extern "C" int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd) {
 	UNREFERENCED_PARAMETER(hInstance);
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 	UNREFERENCED_PARAMETER(nShowCmd);
+
+#ifdef CREATECONSOLE
+	AllocConsole();
+	FILE* dummy;
+	freopen_s(&dummy, "CONIN$", "rb", stdin);
+	freopen_s(&dummy, "CONOUT$", "wb", stdout);
+	freopen_s(&dummy, "CONOUT$", "wb", stderr);
+#endif
+
 
 	myopic();
 }
