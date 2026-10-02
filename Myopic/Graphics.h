@@ -43,7 +43,7 @@ public:
 	gfx_err SetShader(const Shader* shader);
 	gfx_err SetMaterial(const Material* material);
 	gfx_err UpdateObjectProps(const Material* material, ObjectDataBuffer& buffer);
-	gfx_err RenderMesh(const Mesh* mesh, int subMesh = 0);
+	gfx_err RenderMesh(const SubMesh* mesh);
 
 	gfx_err RenderModel(const Model* model, ::XMFLOAT4X4& transform);
 
@@ -61,14 +61,8 @@ public:
 	ComPtr<ID3D11VertexShader> DXCreateVertexShader(const std::wstring& fileName, VertexLayout* layout);
 	ComPtr<ID3D11PixelShader> DXCreatePixelShader(const std::wstring& fileName);
 
-	std::unique_ptr<Mesh> CreateMeshFlat(void* vertices, size_t count, size_t stride, int subMeshCount = 1);
-	template<typename VertexType>
-	std::unique_ptr<Mesh> CreateMesh(std::vector<VertexType>& vertices, int subMeshCount = 1)
-	{
-		return CreateMeshFlat(vertices.data(), vertices.size(), sizeof(VertexType), subMeshCount);
-	}
 
-	void SetSubMesh(const std::unique_ptr<Mesh>& mesh, const int subMesh, std::vector<uint32_t>& indices);
+	void CreateSubMesh(SubMesh& mesh, std::vector<float>& vertices, size_t vertex_size_bytes, std::vector<uint32_t>& indices, size_t material_index = 0);
 
 	bool GetFullscreen() {
 		BOOL fullscreen;

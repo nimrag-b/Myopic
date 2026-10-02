@@ -2,37 +2,34 @@
 #include "Resource.h"
 #include "GraphicsDef.h"
 
+struct SubMesh {
+	ComPtr<ID3D11Buffer> d3dVertexBuffer = nullptr;
+	ComPtr<ID3D11Buffer> d3dIndexBuffer = nullptr;
+	size_t indexCount = 0;
+	size_t vertexCount = 0;
+	size_t stride = 0; //stride
+	size_t materialIndex = 0;
+};
+
 class Mesh : public IResource {
 	friend class Graphics;
 public: 
-	void Render(ID3D11DeviceContext* deviceContext, int index)
-	{
-		deviceContext->IASetIndexBuffer(subMeshes[index].indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-		deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		deviceContext->DrawIndexed(static_cast<UINT>(subMeshes[index].indexCount), 0, 0);
+	Mesh(size_t size) : subMeshes(size) {
 
 	}
-	void Reset() {
-		d3dVertexBuffer.Reset();
+	void Reset(int newCount = 0) {
 
-		for (size_t i = 0; i < subMeshCount; i++)
-		{
-			subMeshes[i].indexBuffer.Reset();
-		}
+		subMeshes.clear();
+		subMeshes.resize(newCount);
 	}
+
+	SubMesh& Get(size_t index) {
+		return subMeshes[index];
+	}
+
 private:
 	Mesh() {}
-	//vertex data
-	ComPtr<ID3D11Buffer> d3dVertexBuffer = nullptr;
 
-	size_t stride = 0; //stride
-	size_t vertexCount = 0;
+	std::vector<SubMesh> subMeshes;
 
-
-	struct index_group {
-		ComPtr<ID3D11Buffer> indexBuffer = nullptr;
-		size_t indexCount = 0;
-	};
-	std::unique_ptr<index_group[]> subMeshes = nullptr;
-	size_t subMeshCount = 0;
 };

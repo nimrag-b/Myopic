@@ -88,16 +88,15 @@ int myopic() {
 
 
 	assets.LoadModel("2B_Rip_v1_6_R");
-	return 0;
 
 
-	auto rawmesh = gfx.CreateMesh(vertices);
-	gfx.SetSubMesh(rawmesh, 0, indices);
-	assets.Register("Quad", std::move(rawmesh));
+	//auto rawmesh = gfx.CreateMesh(vertices);
+	//gfx.SetSubMesh(rawmesh, 0, indices);
+	//assets.Register("Quad", std::move(rawmesh));
 
-	auto guiraw = gfx.CreateMesh(GUIvertices);
-	gfx.SetSubMesh(guiraw, 0, GUIindices);
-	assets.Register("GUIQuad", std::move(guiraw));
+	//auto guiraw = gfx.CreateMesh(GUIvertices);
+	//gfx.SetSubMesh(guiraw, 0, GUIindices);
+	//assets.Register("GUIQuad", std::move(guiraw));
 
 	assets.Register("gui", gfx.LoadShader("shaders/GUI.vs.cso", "shaders/GUI.ps.cso", &UIlayout));
 

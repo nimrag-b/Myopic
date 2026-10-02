@@ -418,17 +418,18 @@ gfx_err Graphics::UpdateObjectProps(const Material* material, ObjectDataBuffer& 
 	return gfx_err::OK;
 }
 
-gfx_err Graphics::RenderMesh(const Mesh* mesh, int subMesh) {
+gfx_err Graphics::RenderMesh(const SubMesh* mesh) {
 	if (mesh == nullptr) return gfx_err::NULL_ERROR;
+
 	UINT stride = static_cast<UINT>(mesh->stride);
 	UINT offset = 0;
 	//bind mesh
 	d3dDeviceContext->IASetVertexBuffers(0, 1, mesh->d3dVertexBuffer.GetAddressOf(), &stride, &offset);
 
 	//bind vertices
-	d3dDeviceContext->IASetIndexBuffer(mesh->subMeshes[subMesh].indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+	d3dDeviceContext->IASetIndexBuffer(mesh->d3dIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 	d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	d3dDeviceContext->DrawIndexed(static_cast<UINT>(mesh->subMeshes[subMesh].indexCount), 0, 0);
+	d3dDeviceContext->DrawIndexed(static_cast<UINT>(mesh->indexCount), 0, 0);
 
 	return gfx_err::OK;
 }
@@ -440,11 +441,14 @@ gfx_err Graphics::RenderModel(const Model* model, ::XMFLOAT4X4& transform)
 
 	Mesh* mesh = model->mesh.get();
 
-	for (size_t i = 0; i < mesh->subMeshCount; i++) {
+	for (auto& it : mesh->subMeshes)
+	{
+		if (it.materialIndex >= model->material_count) {
+			return gfx_err::CONFIG_ERROR;
+		}
 
-		size_t m = min(i, model->material_count);
+		Material* mat = model->materials[it.materialIndex].get();
 
-		Material* mat = model->materials[m].get();
 		SetMaterial(mat);
 		UpdateObjectProps(mat, odb);
 		d3dDeviceContext.Get()->UpdateSubresource(d3dObjectDataBuffer.Get(), 0, nullptr, &odb, 0, 0);
@@ -452,9 +456,8 @@ gfx_err Graphics::RenderModel(const Model* model, ::XMFLOAT4X4& transform)
 		SetTexture(mat->texture.get(), 0);
 		SetTexture(mat->normal.get(), 1);
 
-		RenderMesh(mesh, (int)i);
+		RenderMesh(&it);
 	}
-
 
 	return gfx_err::OK;
 }
@@ -591,42 +594,34 @@ ComPtr<ID3D11PixelShader> Graphics::DXCreatePixelShader(const std::wstring& file
 	return pixelShader;
 }
 
-std::unique_ptr<Mesh> Graphics::CreateMeshFlat(void* vertices, size_t count, size_t stride, int subMeshCount) {
-	std::unique_ptr<Mesh> mesh(new Mesh);
-	mesh->vertexCount = count;
-	mesh->subMeshCount = subMeshCount;
-	mesh->subMeshes = std::make_unique<Mesh::index_group[]>(subMeshCount);
-	mesh->stride = stride;
+
+void Graphics::CreateSubMesh(SubMesh& mesh, std::vector<float>& vertices, size_t vertex_size_bytes, std::vector<uint32_t>& indices, size_t material_index = 0)
+{
+	//create vertex buffer
+
+	mesh.vertexCount = (vertices.size() * sizeof(float)) / vertex_size_bytes;
+	mesh.stride = vertex_size_bytes;
 
 	D3D11_BUFFER_DESC bd = { 0 };
 	D3D11_SUBRESOURCE_DATA initData = { 0 };
 
 	//create vertex buffer
 	bd.Usage = D3D11_USAGE::D3D11_USAGE_IMMUTABLE; //regular usage, no streaming or weirdness
-	bd.ByteWidth = static_cast<UINT>(stride * mesh->vertexCount);
+	bd.ByteWidth = static_cast<UINT>(vertices.size() * sizeof(float));
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; //bind vertexes to vertex buffer
 	bd.CPUAccessFlags = 0;
-	initData.pSysMem = vertices; //attach data
+	initData.pSysMem = vertices.data(); //attach data
 
 	err::ThrowOnFail(
-		d3dDevice->CreateBuffer(&bd, &initData, &mesh->d3dVertexBuffer)
+		d3dDevice->CreateBuffer(&bd, &initData, mesh.d3dVertexBuffer.ReleaseAndGetAddressOf())
 	);
 
-	return std::move(mesh);
-}
+	//create index buffer
 
-void Graphics::SetSubMesh(const std::unique_ptr<Mesh>& mesh, const int subMesh, std::vector<uint32_t>& indices) {
+	mesh.indexCount = indices.size();
 
-	if (subMesh < 0 || subMesh >= mesh->subMeshCount) {
-		throw std::exception();
-	}
-
-	Mesh::index_group& group = mesh->subMeshes[subMesh];
-
-	group.indexCount = indices.size();
-
-	D3D11_BUFFER_DESC bd = { 0 };
-	D3D11_SUBRESOURCE_DATA initData = { 0 };
+	bd = { 0 };
+	initData = { 0 };
 	//create index buffer
 	bd.Usage = D3D11_USAGE_DEFAULT;
 	bd.ByteWidth = static_cast<UINT>(sizeof(uint32_t) * indices.size());
@@ -635,8 +630,13 @@ void Graphics::SetSubMesh(const std::unique_ptr<Mesh>& mesh, const int subMesh, 
 	initData.pSysMem = indices.data();
 
 	err::ThrowOnFail(
-		d3dDevice->CreateBuffer(&bd, &initData, group.indexBuffer.ReleaseAndGetAddressOf())
+		d3dDevice->CreateBuffer(&bd, &initData, mesh.d3dIndexBuffer.ReleaseAndGetAddressOf())
 	);
+
+
+	//assign extra data
+	mesh.materialIndex = material_index;
+
 }
 
 #pragma region DX internal functions

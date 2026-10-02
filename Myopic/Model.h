@@ -12,7 +12,7 @@ class Model
 {
 	friend class Graphics;
 public:
-	static constexpr size_t MAX_MATERIALS = 8;
+	static constexpr size_t MAX_MATERIALS = 10;
 
 	Model(const resource_ptr<Mesh> mesh, const std::vector<resource_ptr<Material>>& materialsvec) : mesh(mesh), material_count(materialsvec.size()) {
 		if (materialsvec.size() > MAX_MATERIALS) {

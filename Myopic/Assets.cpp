@@ -282,6 +282,26 @@ bool Assets::LoadModel(const ResourceLocation& tag)
 		}
 
 	}
+	//make sure we have loaded the correct number of meshes
+	assert(parts.size() == numMeshes);
+
+	std::unique_ptr<Mesh> mesh = std::make_unique<Mesh>(numMeshes);
+
+	//GVERTEX is tightly packed so we can just read the array directly into the mesh without padding
+	if (format == 1) {
+
+		for (size_t i = 0; i < numMeshes; i++)
+		{
+			SubMesh& sm = mesh->Get(i);
+			mesh_part& part = parts[i];
+			gfx.CreateSubMesh(sm, part.verts, sizeof(GVertex), part.indices, part.material_index);
+		}
+	}
+	else {
+		return false;
+	}
+
+	meshes.insert(tag.ToString(), std::move(mesh));
 
 	return true;
 }
