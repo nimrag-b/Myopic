@@ -44,6 +44,7 @@ void GetMeshPart(const aiMesh* mesh, mesh_part* part) {
 
     part->material_index = mesh->mMaterialIndex;
 
+
     for (size_t j = 0; j < AI_MAX_NUMBER_OF_TEXTURECOORDS; j++)
     {
         if (mesh->HasTextureCoords(j)) {
@@ -125,7 +126,8 @@ bool GetMeshPartsForFile(const std::string& inFile, std::vector<mesh_part>& part
         aiProcess_CalcTangentSpace |
         aiProcess_Triangulate |
         aiProcess_JoinIdenticalVertices |
-        aiProcess_SortByPType);
+        aiProcess_SortByPType |
+        (aiProcess_MakeLeftHanded | aiProcess_FlipUVs | 0));
 
     // If the import failed, report it
     if (nullptr == scene) {
@@ -139,6 +141,45 @@ bool GetMeshPartsForFile(const std::string& inFile, std::vector<mesh_part>& part
         std::cout << "Mesh " << i << std::endl;
         mesh_part& part = parts.emplace_back();
         GetMeshPart(scene->mMeshes[i], &part);
+    }
+
+    std::ofstream mfs;
+    std::string matName;
+    for (size_t i = 0; i < scene->mNumMaterials; i++)
+    {
+        aiMaterial* mat = scene->mMaterials[i];
+        matName = mat->GetName().C_Str();
+        matName += ".mat";
+        mfs.open(matName);
+
+        mfs << i << std::endl;
+
+        mfs << mat->GetName().C_Str() << std::endl << std::endl;
+
+        aiString path;
+
+        
+        if (mat->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), path) == aiReturn_SUCCESS) {
+            mfs << "Diffuse = " << path.C_Str() << std::endl;       
+        }
+        if (mat->Get(AI_MATKEY_TEXTURE(aiTextureType_NORMALS, 0), path) == aiReturn_SUCCESS) {
+            mfs << "Normal = " << path.C_Str() << std::endl;
+        }
+        if (mat->Get(AI_MATKEY_SHININESS, path) == aiReturn_SUCCESS) {
+            mfs << "Specular = " << path.C_Str() << std::endl;
+        }
+
+        
+        //mfs << std::endl;
+        //for (size_t i = 0; i < mat->mNumProperties; i++)
+        //{
+        //    aiMaterialProperty* prop = mat->mProperties[i];
+        //    mfs << prop->mKey.C_Str() << " : ";
+        //    mfs.write(prop->mData, prop->mDataLength);
+        //    mfs << std::endl;
+        //}
+
+        mfs.close();
     }
 
     return true;

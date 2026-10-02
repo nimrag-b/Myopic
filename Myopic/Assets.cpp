@@ -54,6 +54,10 @@ void Assets::LoadTexture(const ResourceLocation& tag) {
 
 	SDL_Surface* surfraw = SDL_LoadSurface(path.c_str());
 
+	if (surfraw == nullptr) {
+		return;
+	}
+
 	SDL_Surface* surf = SDL_ConvertSurface(surfraw, SDL_PIXELFORMAT_BGRA32);
 
 	SDL_DestroySurface(surfraw);
@@ -92,7 +96,7 @@ resource_ptr<Mesh> Assets::GetOrCreateMesh(const ResourceLocation& tag)
 	auto& reg = GetRegistry<Mesh>();
 	resource_ptr<Mesh> res = reg.get(name);
 	if (res == nullptr) {
-		LoadMesh(tag);
+		LoadModel(tag);
 		res = reg.get(name);
 	}
 
@@ -103,73 +107,73 @@ resource_ptr<Mesh> Assets::GetOrCreateMesh(const ResourceLocation& tag)
 
 }
 
-
-void Assets::LoadMesh(const ResourceLocation& tag)
-{
-	std::string path = tag.Filepath("meshes", ".naf");
-	std::ifstream file(path, std::ios::binary);
-
-	struct alignas(4) naf_header {
-		unsigned int magic;
-		unsigned int format;
-		unsigned int mesh_count;
-		unsigned int vertex_count;
-	};
-
-
-	if (file.is_open()) {
-
-		std::vector<char> bytes(
-			(std::istreambuf_iterator<char>(file)),
-			(std::istreambuf_iterator<char>()));
-		size_t ptr = 0;
-
-		naf_header header = *(reinterpret_cast<naf_header*>(&bytes[ptr]));
-		ptr += sizeof(naf_header);
-
-		if (header.magic != 0xB33FB33F) throw load_error("File '" + path + "' is not a valid mesh");
-
-		if (header.format != 1) throw load_error("Invalid mesh format for '" + path + "'");
-
-
-		try {
-			GVertex* begin = reinterpret_cast<GVertex*>(&bytes[ptr]);
-			std::vector<GVertex> vertices = std::vector<GVertex>(begin, begin + header.vertex_count);
-			ptr += header.vertex_count * sizeof(GVertex);
-
-			auto Mesh = gfx.CreateMesh(vertices, header.mesh_count);
-
-			for (size_t i = 0; i < header.mesh_count; i++)
-			{
-				unsigned int nameLength = *(reinterpret_cast<unsigned int*>(&bytes[ptr]));
-				ptr += sizeof(nameLength);
-				std::string name(&bytes[ptr], &bytes[ptr] + nameLength);
-				ptr += nameLength * sizeof(char);
-
-				unsigned int indexCount = *(reinterpret_cast<unsigned int*>(&bytes[ptr]));
-				ptr += sizeof(indexCount);
-				uint32_t* ibegin = reinterpret_cast<uint32_t*>(&bytes[ptr]);
-				std::vector<uint32_t> indices = std::vector<uint32_t>(ibegin, ibegin + indexCount);
-				ptr += indexCount * sizeof(uint32_t);
-
-				gfx.SetSubMesh(Mesh, i, indices);
-			}
-
-
-			Register(tag.ToString(), std::move(Mesh));
-
-		}
-		catch (std::exception e) {
-			throw load_error("Error in mesh data causing '" + std::string(e.what()) + "'");
-		}
-
-		file.close();
-
-		return;
-	}
-
-	throw load_error("File '" + path + "' does not exist");
-}
+//
+//void Assets::LoadMesh(const ResourceLocation& tag)
+//{
+//	std::string path = tag.Filepath("meshes", ".naf");
+//	std::ifstream file(path, std::ios::binary);
+//
+//	struct alignas(4) naf_header {
+//		unsigned int magic;
+//		unsigned int format;
+//		unsigned int mesh_count;
+//		unsigned int vertex_count;
+//	};
+//
+//
+//	if (file.is_open()) {
+//
+//		std::vector<char> bytes(
+//			(std::istreambuf_iterator<char>(file)),
+//			(std::istreambuf_iterator<char>()));
+//		size_t ptr = 0;
+//
+//		naf_header header = *(reinterpret_cast<naf_header*>(&bytes[ptr]));
+//		ptr += sizeof(naf_header);
+//
+//		if (header.magic != 0xB33FB33F) throw load_error("File '" + path + "' is not a valid mesh");
+//
+//		if (header.format != 1) throw load_error("Invalid mesh format for '" + path + "'");
+//
+//
+//		try {
+//			GVertex* begin = reinterpret_cast<GVertex*>(&bytes[ptr]);
+//			std::vector<GVertex> vertices = std::vector<GVertex>(begin, begin + header.vertex_count);
+//			ptr += header.vertex_count * sizeof(GVertex);
+//
+//			auto Mesh = gfx.CreateMesh(vertices, header.mesh_count);
+//
+//			for (size_t i = 0; i < header.mesh_count; i++)
+//			{
+//				unsigned int nameLength = *(reinterpret_cast<unsigned int*>(&bytes[ptr]));
+//				ptr += sizeof(nameLength);
+//				std::string name(&bytes[ptr], &bytes[ptr] + nameLength);
+//				ptr += nameLength * sizeof(char);
+//
+//				unsigned int indexCount = *(reinterpret_cast<unsigned int*>(&bytes[ptr]));
+//				ptr += sizeof(indexCount);
+//				uint32_t* ibegin = reinterpret_cast<uint32_t*>(&bytes[ptr]);
+//				std::vector<uint32_t> indices = std::vector<uint32_t>(ibegin, ibegin + indexCount);
+//				ptr += indexCount * sizeof(uint32_t);
+//
+//				gfx.SetSubMesh(Mesh, i, indices);
+//			}
+//
+//
+//			Register(tag.ToString(), std::move(Mesh));
+//
+//		}
+//		catch (std::exception e) {
+//			throw load_error("Error in mesh data causing '" + std::string(e.what()) + "'");
+//		}
+//
+//		file.close();
+//
+//		return;
+//	}
+//
+//	throw load_error("File '" + path + "' does not exist");
+//}
 
 
 struct mesh_part {

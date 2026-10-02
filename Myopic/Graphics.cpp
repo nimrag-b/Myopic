@@ -595,7 +595,7 @@ ComPtr<ID3D11PixelShader> Graphics::DXCreatePixelShader(const std::wstring& file
 }
 
 
-void Graphics::CreateSubMesh(SubMesh& mesh, std::vector<float>& vertices, size_t vertex_size_bytes, std::vector<uint32_t>& indices, size_t material_index = 0)
+void Graphics::CreateSubMesh(SubMesh& mesh, std::vector<float>& vertices, size_t vertex_size_bytes, std::vector<uint32_t>& indices, size_t material_index)
 {
 	//create vertex buffer
 

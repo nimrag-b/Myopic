@@ -85,9 +85,54 @@ int myopic() {
 	gfx.Initialise();
 	Assets assets(gfx);
 
+	assets.Register("gui", gfx.LoadShader("shaders/GUI.vs.cso", "shaders/GUI.ps.cso", &UIlayout));
+
+	assets.Register("basic", gfx.LoadShader("shaders/Basic.vs.cso", "shaders/Basic.ps.cso", &basiclayout));
+	assets.Register("myopic:standard_lit", gfx.LoadShader("shaders/Main.vs.cso", "shaders/Main.ps.cso", nullptr));
 
 
 	assets.LoadModel("2B_Rip_v1_6_R");
+
+	assets.CreateMaterial("2BRip_Boots", MaterialDef{
+		.shader = "standard_lit",
+		.texture = "asdf2b0_tex06"
+		});
+	assets.CreateMaterial("2BRip_Cloth", MaterialDef{
+	.shader = "standard_lit",
+	.texture = "asdf2b0_tex06"
+		});
+	assets.CreateMaterial("2BRip_Eye", MaterialDef{
+.shader = "standard_lit",
+.texture = "asdf2b0_tex04"
+		});
+	assets.CreateMaterial("2BRip_Eyelash", MaterialDef{
+.shader = "standard_lit",
+.texture = "asdf2b0_tex09"
+		});
+	assets.CreateMaterial("2BRip_EyeShadow", MaterialDef{
+.shader = "standard_lit",
+.texture = "asdf2b0_tex04"
+		});
+	assets.CreateMaterial("2BRip_Hair1", MaterialDef{
+.shader = "standard_lit",
+.texture = "asdf2b0_tex09",
+.normal = "asdf2b0_tex10"
+		});
+	assets.CreateMaterial("2BRip_Hair2", MaterialDef{
+.shader = "standard_lit",
+		});
+	assets.CreateMaterial("2BRip_Satin", MaterialDef{
+.shader = "standard_lit",
+.texture = "asdf2b0_tex09"
+		});
+	assets.CreateMaterial("2BRip_Skin", MaterialDef{
+.shader = "standard_lit",
+.texture = "asdf2b0_tex04"
+		});
+	assets.CreateMaterial("2BRip_Tights", MaterialDef{
+.shader = "standard_lit",
+.texture = "asdf2b0_tex00"
+		});
 
 
 	//auto rawmesh = gfx.CreateMesh(vertices);
@@ -98,37 +143,48 @@ int myopic() {
 	//gfx.SetSubMesh(guiraw, 0, GUIindices);
 	//assets.Register("GUIQuad", std::move(guiraw));
 
-	assets.Register("gui", gfx.LoadShader("shaders/GUI.vs.cso", "shaders/GUI.ps.cso", &UIlayout));
 
-	assets.Register("basic", gfx.LoadShader("shaders/Basic.vs.cso", "shaders/Basic.ps.cso", &basiclayout));
-	assets.Register("myopic:standard_lit", gfx.LoadShader("shaders/Main.vs.cso", "shaders/Main.ps.cso", nullptr));
+	//assets.CreateMaterial("myopic:heavymat", MaterialDef{
+	//	.shader = "standard_lit",
+	//	.texture = "hvyweapon_red",
+	//	.normal = "hvyweapon_normal",
+	//	.specular = 0.05f
+	//	});
 
-	assets.CreateMaterial("myopic:heavymat", MaterialDef{
-		.shader = "standard_lit",
-		.texture = "hvyweapon_red",
-		.normal = "hvyweapon_normal",
-		.specular = 0.05f
-		});
+	//assets.CreateMaterial("myopic:heavyhead", MaterialDef{
+	//	.shader = "standard_lit",
+	//	.texture = "heavy_head",
+	//	.specular = 0.05f
+	//	});
 
-	assets.CreateMaterial("myopic:heavyhead", MaterialDef{
-		.shader = "standard_lit",
-		.texture = "heavy_head",
-		.specular = 0.05f
-		});
-
-	assets.LoadMesh("myopic:heavy");
+	//assets.LoadMesh("myopic:heavy");
 
 	//assets.LoadTexture("myopic:heavy_head");
 	//assets.LoadTexture("myopic:hvyweapon_normal");
 	//assets.LoadTexture("myopic:hvyweapon_red");
 
 
-	auto heavy = assets.Get<Mesh>("myopic:heavy");
+	//auto heavy = assets.Get<Mesh>("myopic:heavy");
 
-	auto heavy_mat = assets.Get<Material>("myopic:heavymat");
-	auto heavy_head = assets.Get<Material>("myopic:heavyhead");
+	//auto heavy_mat = assets.Get<Material>("myopic:heavymat");
+	//auto heavy_head = assets.Get<Material>("myopic:heavyhead");
 
-	Model heavy_mod( heavy, std::vector<resource_ptr<Material>>{heavy_mat, heavy_head, heavy_mat, heavy_head, heavy_mat} );
+	//Model heavy_mod( heavy, std::vector<resource_ptr<Material>>{heavy_mat, heavy_head, heavy_mat, heavy_head, heavy_mat} );
+
+	auto mesh = assets.Get<Mesh>("myopic:2B_Rip_v1_6_R");
+
+	Model mod_2b(mesh, std::vector<resource_ptr<Material>>{
+			assets.Get<Material>("myopic:2BRip_Cloth"),
+			assets.Get<Material>("myopic:2BRip_Satin"),
+			assets.Get<Material>("myopic:2BRip_Tights"),
+			assets.Get<Material>("myopic:2BRip_Hair1"),
+			assets.Get<Material>("myopic:2BRip_Hair2"),
+			assets.Get<Material>("myopic:2BRip_Eyelash"),
+			assets.Get<Material>("myopic:2BRip_Skin"),
+			assets.Get<Material>("myopic:2BRip_EyeShadow"),
+			assets.Get<Material>("myopic:2BRip_Boots"),
+			assets.Get<Material>("myopic:2BRip_Eye"),
+	});
 
 	float heavy_rot = 0;
 
@@ -214,7 +270,7 @@ int myopic() {
 		heavy_rot += (float)delta;
 
 		XMFLOAT4X4 transform;
-		XMMATRIX xmm = ::XMMatrixRotationY(heavy_rot) * DirectX::XMMatrixScaling(0.2f, 0.2f, 0.2f) * DirectX::XMMatrixTranslation(0, -10, 20);
+		XMMATRIX xmm = ::XMMatrixRotationX(XM_PIDIV2) * ::XMMatrixRotationY(heavy_rot) * DirectX::XMMatrixScaling(5, 5, 5) * DirectX::XMMatrixTranslation(0, -5, 10);
 
 		//store the model matrix in the correct spot
 		DirectX::XMStoreFloat4x4(
@@ -222,7 +278,7 @@ int myopic() {
 			XMMatrixTranspose(xmm)
 		);
 
-		gfx.RenderModel(&heavy_mod, transform);
+		gfx.RenderModel(&mod_2b, transform);
 
 		//gfx.EnableAlphaBlend();
 

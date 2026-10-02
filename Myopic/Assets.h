@@ -12,7 +12,7 @@ public:
 	}
 
 	void CreateShader(const std::string& tag, const ResourceLocation& vertex, const ResourceLocation& fragment, VertexLayout* layout);
-	void LoadMesh(const ResourceLocation& tag);
+	//void LoadMesh(const ResourceLocation& tag);
 	bool LoadModel(const ResourceLocation& tag);
 
 	void LoadTexture(const ResourceLocation& tag);
