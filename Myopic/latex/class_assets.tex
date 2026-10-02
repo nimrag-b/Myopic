@@ -1,0 +1,53 @@
+\doxysection{Assets Class Reference}
+\hypertarget{class_assets}{}\label{class_assets}\index{Assets@{Assets}}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_assets_a3578488709593aeacf8a2aca3cbaa922}\label{class_assets_a3578488709593aeacf8a2aca3cbaa922} 
+{\bfseries Assets} (\doxymbox{\hyperlink{class_graphics}{Graphics}} \&gfx)
+\item 
+\Hypertarget{class_assets_ae5fcd990d09a3a61936bdec6a52564bd}\label{class_assets_ae5fcd990d09a3a61936bdec6a52564bd} 
+void {\bfseries Create\+Shader} (const std::\+string \&tag, const \doxymbox{\hyperlink{class_resource_location}{Resource\+Location}} \&vertex, const \doxymbox{\hyperlink{class_resource_location}{Resource\+Location}} \&fragment, \doxymbox{\hyperlink{class_vertex_layout}{Vertex\+Layout}} \texorpdfstring{$\ast$}{*}layout)
+\item 
+\Hypertarget{class_assets_a11b689392595570ca6717a602e697769}\label{class_assets_a11b689392595570ca6717a602e697769} 
+void {\bfseries Load\+Mesh} (const \doxymbox{\hyperlink{class_resource_location}{Resource\+Location}} \&tag)
+\item 
+\Hypertarget{class_assets_a9d7df0eb7ecace6eae5f02ae50508f57}\label{class_assets_a9d7df0eb7ecace6eae5f02ae50508f57} 
+void {\bfseries Load\+Texture} (const \doxymbox{\hyperlink{class_resource_location}{Resource\+Location}} \&tag)
+\item 
+\Hypertarget{class_assets_aacf5bdaf1add910285860e22646d56a0}\label{class_assets_aacf5bdaf1add910285860e22646d56a0} 
+\doxymbox{\hyperlink{classresource__ptr}{resource\+\_\+ptr}}$<$ \doxymbox{\hyperlink{class_mesh}{Mesh}} $>$ {\bfseries Get\+Or\+Create\+Mesh} (const \doxymbox{\hyperlink{class_resource_location}{Resource\+Location}} \&tag)
+\item 
+\Hypertarget{class_assets_acb9438aad199d1db9580a41eb0dce661}\label{class_assets_acb9438aad199d1db9580a41eb0dce661} 
+\doxymbox{\hyperlink{classresource__ptr}{resource\+\_\+ptr}}$<$ \doxymbox{\hyperlink{class_texture}{Texture}} $>$ {\bfseries Get\+Or\+Create\+Texture} (const \doxymbox{\hyperlink{class_resource_location}{Resource\+Location}} \&tag)
+\item 
+\Hypertarget{class_assets_a7e8375b7534ed78f4e5fa9b752ea1788}\label{class_assets_a7e8375b7534ed78f4e5fa9b752ea1788} 
+void {\bfseries Create\+Material} (const \doxymbox{\hyperlink{class_resource_location}{Resource\+Location}} \&name, const \doxymbox{\hyperlink{struct_material_def}{Material\+Def}} \&def)
+\item 
+\Hypertarget{class_assets_a7a890ff579c639970c3868d9044731f9}\label{class_assets_a7a890ff579c639970c3868d9044731f9} 
+{\footnotesize template$<$typename T$>$ }\\void {\bfseries Register} (const std::\+string \&tag, std::\+unique\+\_\+ptr$<$ T $>$ res)
+\item 
+\Hypertarget{class_assets_aa26ec1c804614cee11e2555045042c4d}\label{class_assets_aa26ec1c804614cee11e2555045042c4d} 
+{\footnotesize template$<$typename T$>$ }\\\doxymbox{\hyperlink{classresource__ptr}{resource\+\_\+ptr}}$<$ T $>$ {\bfseries Get} (const std::\+string \&tag)
+\item 
+\Hypertarget{class_assets_a717393cee6c74df74a274240de3a52d5}\label{class_assets_a717393cee6c74df74a274240de3a52d5} 
+{\footnotesize template$<$typename T$>$ }\\\doxymbox{\hyperlink{class_registry}{Registry}}$<$ T $>$ \& {\bfseries Get\+Registry} ()
+\item 
+\Hypertarget{class_assets_acba08f9fa24469f03e0c790058d72eab}\label{class_assets_acba08f9fa24469f03e0c790058d72eab} 
+template$<$$>$ \doxymbox{\hyperlink{class_registry}{Registry}}$<$ \doxymbox{\hyperlink{class_shader}{Shader}} $>$ \& {\bfseries Get\+Registry} ()
+\item 
+\Hypertarget{class_assets_ad0b326dac97de0acf2aaf267ce1d3365}\label{class_assets_ad0b326dac97de0acf2aaf267ce1d3365} 
+template$<$$>$ \doxymbox{\hyperlink{class_registry}{Registry}}$<$ \doxymbox{\hyperlink{class_mesh}{Mesh}} $>$ \& {\bfseries Get\+Registry} ()
+\item 
+\Hypertarget{class_assets_ade338258586277fc1381aa4b5f35f840}\label{class_assets_ade338258586277fc1381aa4b5f35f840} 
+template$<$$>$ \doxymbox{\hyperlink{class_registry}{Registry}}$<$ \doxymbox{\hyperlink{class_texture}{Texture}} $>$ \& {\bfseries Get\+Registry} ()
+\item 
+\Hypertarget{class_assets_aceb30fd21248bff2b4dff74d6af5f82c}\label{class_assets_aceb30fd21248bff2b4dff74d6af5f82c} 
+template$<$$>$ \doxymbox{\hyperlink{class_registry}{Registry}}$<$ \doxymbox{\hyperlink{class_material}{Material}} $>$ \& {\bfseries Get\+Registry} ()
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
+\item 
+Assets.\+h\item 
+Assets.\+cpp\end{DoxyCompactItemize}

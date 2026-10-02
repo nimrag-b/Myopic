@@ -9,6 +9,8 @@
 
 #include <atomic>
 
+#include "Model.h"
+
 
 struct VertexPositionColor
 {
@@ -70,6 +72,11 @@ std::vector<uint32_t> GUIindices = {
 	0, 3, 1
 };
 
+int avg_fps_v = 0;
+
+int avg_fps() {
+	return avg_fps_v;
+}
 
 
 int myopic() {
@@ -88,31 +95,39 @@ int myopic() {
 	gfx.SetSubMesh(guiraw, 0, GUIindices);
 	assets.Register("GUIQuad", std::move(guiraw));
 
-	assets.Register("GUI", gfx.LoadShader("shaders/GUI.vs.cso", "shaders/GUI.ps.cso", &UIlayout));
+	assets.Register("gui", gfx.LoadShader("shaders/GUI.vs.cso", "shaders/GUI.ps.cso", &UIlayout));
 
-	assets.Register("Basic", gfx.LoadShader("shaders/Basic.vs.cso", "shaders/Basic.ps.cso", &basiclayout));
-	assets.Register("StandardLit", gfx.LoadShader("shaders/Main.vs.cso", "shaders/Main.ps.cso", nullptr));
+	assets.Register("basic", gfx.LoadShader("shaders/Basic.vs.cso", "shaders/Basic.ps.cso", &basiclayout));
+	assets.Register("myopic:standard_lit", gfx.LoadShader("shaders/Main.vs.cso", "shaders/Main.ps.cso", nullptr));
+
+	assets.CreateMaterial("myopic:heavymat", MaterialDef{
+		.shader = "standard_lit",
+		.texture = "hvyweapon_red",
+		.normal = "hvyweapon_normal",
+		.specular = 0.05f
+		});
+
+	assets.CreateMaterial("myopic:heavyhead", MaterialDef{
+		.shader = "standard_lit",
+		.texture = "heavy_head",
+		.specular = 0.05f
+		});
 
 	assets.LoadMesh("myopic:heavy");
 
-	assets.LoadTexture("myopic:heavy_head");
-	assets.LoadTexture("myopic:hvyweapon_normal");
-	assets.LoadTexture("myopic:hvyweapon_red");
+	//assets.LoadTexture("myopic:heavy_head");
+	//assets.LoadTexture("myopic:hvyweapon_normal");
+	//assets.LoadTexture("myopic:hvyweapon_red");
 
 
 	auto heavy = assets.Get<Mesh>("myopic:heavy");
 
-	auto stdShader = assets.Get<Shader>("StandardLit");
-	auto basicShader = assets.Get<Shader>("Basic");
-	auto quad = assets.Get<Mesh>("Quad");
+	auto heavy_mat = assets.Get<Material>("myopic:heavymat");
+	auto heavy_head = assets.Get<Material>("myopic:heavyhead");
 
-	auto guiShader = assets.Get<Shader>("GUI");
-	auto guiQuad = assets.Get<Mesh>("GUIQuad");
+	Model heavy_mod( heavy, std::vector<resource_ptr<Material>>{heavy_mat, heavy_head, heavy_mat, heavy_head, heavy_mat} );
 
-	auto hvyweapon_red = assets.Get<Texture>("myopic:hvyweapon_red");
-	auto hvyweapon_normal = assets.Get<Texture>("myopic:hvyweapon_normal");
-
-
+	float heavy_rot = 0;
 
 	Uint64 LAST = SDL_GetTicksNS();
 	double delta = 0;
@@ -159,8 +174,12 @@ int myopic() {
 
 			int fps_avg_vi = 1 / fps_avg_v;
 
-			std::string title = "(avg " + std::to_string(fps_avg_vi) + ")";
-			SDL_SetWindowTitle(gfx.SdlWindow(), title.c_str());
+			avg_fps_v = fps_avg_vi;
+
+			std::cout << avg_fps_v << "ms" << std::endl;
+
+			//std::string title = "(avg " + std::to_string(fps_avg_vi) + ")";
+			//SDL_SetWindowTitle(gfx.SdlWindow(), title.c_str());
 		}
 
 
@@ -189,19 +208,18 @@ int myopic() {
 
 		gfx.BeginRender();
 
-		
-		gfx.SetTexture(hvyweapon_red.get(), 0);
-		gfx.SetTexture(hvyweapon_normal.get(), 1);
+		heavy_rot += (float)delta;
 
-		gfx.SetShader(stdShader.get());
-		gfx.RenderMesh(heavy.get(), 0);
-		gfx.RenderMesh(heavy.get(), 1);
-		gfx.RenderMesh(heavy.get(), 2);
-		gfx.RenderMesh(heavy.get(), 3);
-		gfx.RenderMesh(heavy.get(), 4);
-		//gfx.SetShader(basicShader.get());
-		//gfx.RenderMesh(quad.get());
+		XMFLOAT4X4 transform;
+		XMMATRIX xmm = ::XMMatrixRotationY(heavy_rot) * DirectX::XMMatrixScaling(0.2f, 0.2f, 0.2f) * DirectX::XMMatrixTranslation(0, -10, 20);
 
+		//store the model matrix in the correct spot
+		DirectX::XMStoreFloat4x4(
+			&transform,
+			XMMatrixTranspose(xmm)
+		);
+
+		gfx.RenderModel(&heavy_mod, transform);
 
 		//gfx.EnableAlphaBlend();
 

@@ -26,7 +26,7 @@ public:
 void Assets::CreateShader(const std::string& tag, const ResourceLocation& vertex, const ResourceLocation& fragment, VertexLayout* layout)
 {
 	std::string vres = vertex.ToString();
-	std::string pres = vertex.ToString();
+	std::string pres = fragment.ToString();
 	ComPtr<ID3D11VertexShader> vs;
 	if (d3dVertexShaders.contains(vres)) {
 		vs = d3dVertexShaders.at(vres);
@@ -80,7 +80,7 @@ resource_ptr<Texture> Assets::GetOrCreateTexture(const ResourceLocation& tag)
 	}
 
 	if (res == nullptr) {
-		//return default
+		res = reg.get_err();
 	}
 	return res;
 
@@ -97,11 +97,12 @@ resource_ptr<Mesh> Assets::GetOrCreateMesh(const ResourceLocation& tag)
 	}
 
 	if (res == nullptr) {
-		//return default
+		res = reg.get_err();
 	}
 	return res;
 
 }
+
 
 void Assets::LoadMesh(const ResourceLocation& tag)
 {
@@ -170,20 +171,44 @@ void Assets::LoadMesh(const ResourceLocation& tag)
 	throw load_error("File '" + path + "' does not exist");
 }
 
-void Assets::CreateMaterial(const std::string& name, const MaterialDef& def)
+bool Assets::LoadModel(const ResourceLocation& tag)
 {
-	if (materials.contains(name)) {
-		throw load_error("Cannot create material '" + name + "' as a material with the same name already exists");
+	std::string path = tag.Filepath("meshes", ".nge");
+	std::ifstream fs(path, std::ios::binary);
+	if (!fs.is_open()) {
+		return false;
 	}
 
-	resource_ptr<Texture> tex = NULL;
+	char magic[4] = { 0 };
+
+	fs.read(magic, 4);
+	if (memcmp(magic, "NGE", 4) != 0) {
+		return false;
+	}
+
+	uint32_t version;
+	uint32_t format;
+
+	fs.read((char*)&version, sizeof(uint32_t));
+	fs.read((char*)&format, sizeof(uint32_t));
+
+
+}
+
+void Assets::CreateMaterial(const ResourceLocation& name, const MaterialDef& def)
+{
+	if (materials.contains(name.ToString())) {
+		throw load_error("Cannot create material '" + name.ToString() + "' as a material with the same name already exists");
+	}
+
+	resource_ptr<Texture> tex;
 	if (def.texture.empty()) {
 		tex = Get<Texture>("myopic:error.texture");
 	}
 	else {
 		tex = GetOrCreateTexture(def.texture);
 	}
-	resource_ptr<Texture> normal = NULL;
+	resource_ptr<Texture> normal;
 	if (def.normal.empty()) {
 		normal = Get<Texture>("myopic:error.normal");
 	}
@@ -193,7 +218,7 @@ void Assets::CreateMaterial(const std::string& name, const MaterialDef& def)
 
 	resource_ptr<Shader> shader = Get<Shader>(def.shader.ToString());
 
-	materials.insert( name,std::make_unique<Material>(def.colour, def.specular, def.fresnelRange, shader.get(), tex.get(), normal.get()));
+	materials.insert( name.ToString(), std::make_unique<Material>(def.colour, def.specular, def.fresnelRange, shader.get(), tex.get(), normal.get()));
 }
 
 
@@ -203,7 +228,10 @@ constexpr size_t missing_tex_block_size = 20;
 
 constexpr size_t missing_tex_bytes = missing_tex_width * missing_tex_width * 4;
 
-void generate_missing_tex(std::array<uint8_t, missing_tex_bytes>& arr) {
+std::vector<uint8_t> generate_missing_tex() {
+
+	std::vector<uint8_t> arr( missing_tex_bytes );
+
 	for (size_t i = 0; i < missing_tex_bytes; i += 4)
 	{
 		if ((i / missing_tex_block_size) % 2) {
@@ -219,37 +247,19 @@ void generate_missing_tex(std::array<uint8_t, missing_tex_bytes>& arr) {
 			arr[i + 3] = 255;
 		}
 	}
-};
 
-
-void generate_missing_normal(std::array<uint8_t, missing_tex_bytes>& arr) {
-	for (size_t i = 0; i < missing_tex_bytes; i += 4)
-	{
-		if ((i / missing_tex_block_size) % 2) {
-			arr[i + 0] = 0;
-			arr[i + 1] = 0;
-			arr[i + 2] = 0;
-			arr[i + 3] = 255;
-		}
-		else {
-			arr[i + 0] = 255;
-			arr[i + 1] = 0;
-			arr[i + 2] = 255;
-			arr[i + 3] = 255;
-		}
-	}
+	return arr;
 };
 
 
 
 void Assets::CreateDefaults()
 {
-	std::array<uint8_t, missing_tex_bytes> missing_tex_raw{};
-	generate_missing_tex(missing_tex_raw);
+	auto missing_tex_raw = generate_missing_tex();
 	auto missing_tex = gfx.DXCreateTexture((void*)missing_tex_raw.data(), missing_tex_width, missing_tex_width, missing_tex_width * 4, DXGI_FORMAT_B8G8R8A8_UNORM);
 
 	const uint8_t normalData[4]{ //1x1 normal map pointing out
-	128,128,255,255
+	255,128,128,255
 	};
 
 	auto missing_normal = gfx.DXCreateTexture((void*)normalData, 1, 1, 4, DXGI_FORMAT_B8G8R8A8_UNORM);

@@ -3,6 +3,10 @@
 #include <d2d1_3.h>
 #include <dwrite_3.h>
 
+
+//#define MYOPIC_STRIP_D2D
+
+
 class Graphics2D
 {
 public:

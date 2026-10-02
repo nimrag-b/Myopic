@@ -57,7 +57,7 @@ float Fresnel(float3 normal, float3 viewDir)
 float3 CalculateConstantLight(float intensity, float3 normal, float3 viewDir)
 {
     float3 lightColor = float3(1.0f, 0.9f, 0.9f) * intensity;
-    float3 lightDir = normalize(float3(7, -7, -10));
+    float3 lightDir = normalize(float3(7, -7, 10));
     
         //return float4(normal, 1);
     

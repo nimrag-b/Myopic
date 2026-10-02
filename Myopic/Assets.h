@@ -13,12 +13,14 @@ public:
 
 	void CreateShader(const std::string& tag, const ResourceLocation& vertex, const ResourceLocation& fragment, VertexLayout* layout);
 	void LoadMesh(const ResourceLocation& tag);
+	bool LoadModel(const ResourceLocation& tag);
+
 	void LoadTexture(const ResourceLocation& tag);
 
 	resource_ptr<Mesh> GetOrCreateMesh(const ResourceLocation& tag);
 	resource_ptr<Texture> GetOrCreateTexture(const ResourceLocation& tag);
 
-	void CreateMaterial(const std::string& name, const MaterialDef& def);
+	void CreateMaterial(const ResourceLocation& name, const MaterialDef& def);
 
 	template<typename T>
 	void Register(const std::string& tag, std::unique_ptr<T> res) {

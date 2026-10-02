@@ -27,9 +27,10 @@ PixelShaderInput main(VertexShaderInput input)
 
     output.texcoord = input.texcoord;
     
+    float3 binormal = normalize(cross(input.normal, input.tangent));
     
     float3 T = normalize(mul(float4(input.tangent, 0.0),model).xyz);
-    float3 B = normalize(mul(float4(input.binormal, 0.0), model).xyz);
+    float3 B = normalize(mul(float4(binormal, 0.0), model).xyz);
     float3 N = normalize(mul(float4(input.normal, 0.0), model).xyz);
     float3x3 TBN = transpose(float3x3(T, B, N));
     output.TBN = TBN;

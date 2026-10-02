@@ -1,0 +1,107 @@
+\doxysection{Graphics Class Reference}
+\hypertarget{class_graphics}{}\label{class_graphics}\index{Graphics@{Graphics}}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_graphics_a589106682ee51f1a8a7fe235c5a6a185}\label{class_graphics_a589106682ee51f1a8a7fe235c5a6a185} 
+gfx\+\_\+err {\bfseries Initialise} ()
+\item 
+\Hypertarget{class_graphics_a67ece734163c05831c3327449dcb04e5}\label{class_graphics_a67ece734163c05831c3327449dcb04e5} 
+gfx\+\_\+err {\bfseries On\+Resize} ()
+\item 
+\Hypertarget{class_graphics_a0fdddd5a28fc7b8b593d152664aa7fc9}\label{class_graphics_a0fdddd5a28fc7b8b593d152664aa7fc9} 
+gfx\+\_\+err {\bfseries Destroy} ()
+\item 
+\Hypertarget{class_graphics_af9b96b574c879d5a74ed89731bb9d4ca}\label{class_graphics_af9b96b574c879d5a74ed89731bb9d4ca} 
+gfx\+\_\+err {\bfseries Begin\+Render} ()
+\item 
+\Hypertarget{class_graphics_a48fb0642dced7af66d67f149abb3fb3f}\label{class_graphics_a48fb0642dced7af66d67f149abb3fb3f} 
+gfx\+\_\+err {\bfseries End\+Render} ()
+\item 
+\Hypertarget{class_graphics_af0d34b11c886aa50b3d29b6234c20f60}\label{class_graphics_af0d34b11c886aa50b3d29b6234c20f60} 
+gfx\+\_\+err {\bfseries Set\+Texture} (const \doxymbox{\hyperlink{class_texture}{Texture}} \texorpdfstring{$\ast$}{*}texture, int slot=0)
+\item 
+\Hypertarget{class_graphics_a622557b54df08aa5335da4eaf7cde390}\label{class_graphics_a622557b54df08aa5335da4eaf7cde390} 
+gfx\+\_\+err {\bfseries Set\+Shader} (const \doxymbox{\hyperlink{class_shader}{Shader}} \texorpdfstring{$\ast$}{*}shader)
+\item 
+\Hypertarget{class_graphics_a2ef5811e33d9f9f2b1d2a415ad039b87}\label{class_graphics_a2ef5811e33d9f9f2b1d2a415ad039b87} 
+gfx\+\_\+err {\bfseries Set\+Material} (const \doxymbox{\hyperlink{class_material}{Material}} \texorpdfstring{$\ast$}{*}material)
+\item 
+\Hypertarget{class_graphics_a8d6334db82a214fa1c0b8737629ebe8a}\label{class_graphics_a8d6334db82a214fa1c0b8737629ebe8a} 
+gfx\+\_\+err {\bfseries Update\+Object\+Props} (const \doxymbox{\hyperlink{class_material}{Material}} \texorpdfstring{$\ast$}{*}material, \doxymbox{\hyperlink{struct_object_data_buffer}{Object\+Data\+Buffer}} \&buffer)
+\item 
+\Hypertarget{class_graphics_a556e760a142cbe79b73ede5358538be3}\label{class_graphics_a556e760a142cbe79b73ede5358538be3} 
+gfx\+\_\+err {\bfseries Render\+Mesh} (const \doxymbox{\hyperlink{class_mesh}{Mesh}} \texorpdfstring{$\ast$}{*}mesh, int sub\+Mesh=0)
+\item 
+\Hypertarget{class_graphics_af2efef4a909ce0ce43a04b9c9dc047b7}\label{class_graphics_af2efef4a909ce0ce43a04b9c9dc047b7} 
+gfx\+\_\+err {\bfseries Render\+Model} (const \doxymbox{\hyperlink{class_model}{Model}} \texorpdfstring{$\ast$}{*}model, ::\+\+XMFLOAT4\+X4 \&transform)
+\item 
+\Hypertarget{class_graphics_a6e9ef4e6a247f5a4a921901658f3f74e}\label{class_graphics_a6e9ef4e6a247f5a4a921901658f3f74e} 
+std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{class_shader}{Shader}} $>$ {\bfseries Load\+Shader} (const std::\+string \&vertex, const std::\+string \&fragment, \doxymbox{\hyperlink{class_vertex_layout}{Vertex\+Layout}} \texorpdfstring{$\ast$}{*}layout)
+\item 
+\Hypertarget{class_graphics_a22e948616ba9c7098b2d310e64b3a2ae}\label{class_graphics_a22e948616ba9c7098b2d310e64b3a2ae} 
+void {\bfseries Enable\+Alpha\+Blend} ()
+\item 
+\Hypertarget{class_graphics_a3db0249c823ee8f6c1d3bad202699009}\label{class_graphics_a3db0249c823ee8f6c1d3bad202699009} 
+void {\bfseries Disable\+Alpha\+Blend} ()
+\item 
+\Hypertarget{class_graphics_abe2e11e22d8f29cc49233e6c08b07839}\label{class_graphics_abe2e11e22d8f29cc49233e6c08b07839} 
+void {\bfseries DXBind\+D2d\+Texture} ()
+\item 
+\Hypertarget{class_graphics_a4a01a8d94accd52176562b1c5c3456e4}\label{class_graphics_a4a01a8d94accd52176562b1c5c3456e4} 
+std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{class_texture}{Texture}} $>$ {\bfseries DXCreate\+Texture} (void \texorpdfstring{$\ast$}{*}pixels, int width, int height, int pitch, DXGI\+\_\+\+FORMAT format)
+\item 
+\Hypertarget{class_graphics_abf84d4696083d882b0bc621462c0d04c}\label{class_graphics_abf84d4696083d882b0bc621462c0d04c} 
+std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{class_shader}{Shader}} $>$ {\bfseries DXCreate\+Shader} (Com\+Ptr$<$ ID3\+D11\+Vertex\+Shader $>$ vertex, Com\+Ptr$<$ ID3\+D11\+Pixel\+Shader $>$ pixel, const \doxymbox{\hyperlink{class_vertex_layout}{Vertex\+Layout}} \&layout)
+\item 
+\Hypertarget{class_graphics_adb022820c1be637a20a7b2f791d7a3a0}\label{class_graphics_adb022820c1be637a20a7b2f791d7a3a0} 
+Com\+Ptr$<$ ID3\+D11\+Vertex\+Shader $>$ {\bfseries DXCreate\+GVertex\+Vertex\+Shader} (const std::\+wstring \&file\+Name)
+\item 
+\Hypertarget{class_graphics_a91a58e919f31b68ba620b309bef31f3b}\label{class_graphics_a91a58e919f31b68ba620b309bef31f3b} 
+Com\+Ptr$<$ ID3\+D11\+Vertex\+Shader $>$ {\bfseries DXCreate\+Vertex\+Shader} (const std::\+wstring \&file\+Name, \doxymbox{\hyperlink{class_vertex_layout}{Vertex\+Layout}} \texorpdfstring{$\ast$}{*}layout)
+\item 
+\Hypertarget{class_graphics_a317f9cccdaa0c7f21d3876f70a264770}\label{class_graphics_a317f9cccdaa0c7f21d3876f70a264770} 
+Com\+Ptr$<$ ID3\+D11\+Pixel\+Shader $>$ {\bfseries DXCreate\+Pixel\+Shader} (const std::\+wstring \&file\+Name)
+\item 
+\Hypertarget{class_graphics_a1f958d3584d0097ae6d3bb3d828fe440}\label{class_graphics_a1f958d3584d0097ae6d3bb3d828fe440} 
+std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{class_mesh}{Mesh}} $>$ {\bfseries Create\+Mesh\+Flat} (void \texorpdfstring{$\ast$}{*}vertices, size\+\_\+t count, size\+\_\+t stride, int sub\+Mesh\+Count=1)
+\item 
+\Hypertarget{class_graphics_a8bc5a52f8ceb6317e53fd3825cb7b918}\label{class_graphics_a8bc5a52f8ceb6317e53fd3825cb7b918} 
+{\footnotesize template$<$typename Vertex\+Type$>$ }\\std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{class_mesh}{Mesh}} $>$ {\bfseries Create\+Mesh} (std::\+vector$<$ Vertex\+Type $>$ \&vertices, int sub\+Mesh\+Count=1)
+\item 
+\Hypertarget{class_graphics_a8adb13318528e9c05696557cdf5d28c8}\label{class_graphics_a8adb13318528e9c05696557cdf5d28c8} 
+void {\bfseries Set\+Sub\+Mesh} (const std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{class_mesh}{Mesh}} $>$ \&mesh, const int sub\+Mesh, std::\+vector$<$ uint32\+\_\+t $>$ \&indices)
+\item 
+\Hypertarget{class_graphics_aaad70683cef41e2a737e46516f144df6}\label{class_graphics_aaad70683cef41e2a737e46516f144df6} 
+bool {\bfseries Get\+Fullscreen} ()
+\item 
+\Hypertarget{class_graphics_a8a8934ed0dd7838994b55a8d2251475a}\label{class_graphics_a8a8934ed0dd7838994b55a8d2251475a} 
+void {\bfseries Set\+Fullscreen} (bool value)
+\item 
+\Hypertarget{class_graphics_a64fc0140b88cbad02aa76455c702fb09}\label{class_graphics_a64fc0140b88cbad02aa76455c702fb09} 
+SDL\+\_\+\+Window \texorpdfstring{$\ast$}{*} {\bfseries Sdl\+Window} () const
+\item 
+\Hypertarget{class_graphics_a764379b4edf6fd5614099c52ce6336db}\label{class_graphics_a764379b4edf6fd5614099c52ce6336db} 
+const uint32\+\_\+t {\bfseries Window\+Width} () const noexcept
+\item 
+\Hypertarget{class_graphics_a87534d48d18417c47062d52ca62d8e74}\label{class_graphics_a87534d48d18417c47062d52ca62d8e74} 
+const uint32\+\_\+t {\bfseries Window\+Height} () const noexcept
+\item 
+\Hypertarget{class_graphics_af07ba99c7b9b4230a236e8c23c3d3bf7}\label{class_graphics_af07ba99c7b9b4230a236e8c23c3d3bf7} 
+void {\bfseries DXReport\+Live\+Objects} ()
+\item 
+\Hypertarget{class_graphics_a99cb68c4c9b1e96b74e6fac6cd1d8ff9}\label{class_graphics_a99cb68c4c9b1e96b74e6fac6cd1d8ff9} 
+\doxymbox{\hyperlink{class_camera}{Camera}} \& {\bfseries Get\+Camera} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_graphics_a246d39f7122e7555b03e81333d7adbc4}\label{class_graphics_a246d39f7122e7555b03e81333d7adbc4} 
+class {\bfseries Render\+Component}
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
+\item 
+Graphics.\+h\item 
+Graphics.\+cpp\end{DoxyCompactItemize}

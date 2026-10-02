@@ -19,7 +19,7 @@ void Camera::Rotate(float yaw, float pitch) {
 
     pitch += asin(-_forward.y);
     yaw += atan2(_forward.z, _forward.x);
-    std::cout << yaw << std::endl;
+    //std::cout << yaw << std::endl;
 
     pitch = std::clamp<float>(pitch, -(DirectX::XM_PIDIV2 - 0.1f), DirectX::XM_PIDIV2 - 0.1f);
 

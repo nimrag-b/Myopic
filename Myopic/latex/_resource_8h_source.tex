@@ -1,0 +1,228 @@
+\doxysection{Resource.\+h}
+\hypertarget{_resource_8h_source}{}\label{_resource_8h_source}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ <cstdint>}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <type\_traits>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <unordered\_map>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <iostream>}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <atomic>}}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{typedef}\ uint32\_t\ RID;\ \textcolor{comment}{/*\ Resource\ ID*/}}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \textcolor{keyword}{constexpr}\ RID\ NULL\_RID\ =\ 0;}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{classref__count}{ref\_count}}\ \{}
+\DoxyCodeLine{00017\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \ \ \ \ \doxymbox{\hyperlink{classref__count}{ref\_count}}\&\ operator=(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{classref__count}{ref\_count}}\&\ other)\ \{}
+\DoxyCodeLine{00020\ \ \ \ \ \ \ \ \ this-\/>count.exchange(other.count);}
+\DoxyCodeLine{00021\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00022\ \ \ \ \ \}}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ AddRef()\ \{}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ ++count;}
+\DoxyCodeLine{00026\ \ \ \ \ \}}
+\DoxyCodeLine{00027\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ RemoveRef()\ \{}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ -\/-\/count;}
+\DoxyCodeLine{00029\ \ \ \ \ \}}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ Count()\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ count;}
+\DoxyCodeLine{00032\ \ \ \ \ \}}
+\DoxyCodeLine{00033\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00034\ \ \ \ \ std::atomic<unsigned\ long>\ count\ =\ 0;}
+\DoxyCodeLine{00035\ \};}
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \textcolor{keyword}{class\ }IResource\ \{}
+\DoxyCodeLine{00039\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00040\ \ \ \ \ IResource();}
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00042\ \ \ \ \ \string~IResource()\ \{}
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}delete\ "{}}\ <<\ \_id\ <<\ std::endl;}
+\DoxyCodeLine{00044\ \ \ \ \ \}}
+\DoxyCodeLine{00045\ }
+\DoxyCodeLine{00046\ \ \ \ \ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{bool}\ operator==(IResource\&\ r)\ \{}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \_id\ ==\ r.\_id;}
+\DoxyCodeLine{00048\ \ \ \ \ \}}
+\DoxyCodeLine{00049\ \ \ \ \ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{bool}\ operator!=(IResource\&\ r)\ \{}
+\DoxyCodeLine{00050\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \_id\ !=\ r.\_id;}
+\DoxyCodeLine{00051\ \ \ \ \ \}}
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00053\ \ \ \ \ \textcolor{keyword}{inline}\ RID\ id()\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \_id;}
+\DoxyCodeLine{00055\ \ \ \ \ \}}
+\DoxyCodeLine{00056\ }
+\DoxyCodeLine{00057\ \ \ \ \ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ addref()\ \{}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ \textcolor{keyword}{auto}\ r\ =\ \_count.AddRef();}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ std::cout\ <<\ \_id\ <<\ \textcolor{stringliteral}{"{}++\ :\ "{}}\ <<\ r\ <<\ std::endl;}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ r;}
+\DoxyCodeLine{00061\ \ \ \ \ \}}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00063\ \ \ \ \ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ release()\ \{}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ \textcolor{keyword}{auto}\ r\ =\ \_count.RemoveRef();}
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ std::cout\ <<\ \_id\ <<\ \textcolor{stringliteral}{"{}-\/-\/\ :\ "{}}\ <<\ r\ <<\ std::endl;}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ r;}
+\DoxyCodeLine{00067\ \ \ \ \ \}}
+\DoxyCodeLine{00068\ }
+\DoxyCodeLine{00069\ }
+\DoxyCodeLine{00070\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00071\ \ \ \ \ RID\ \_id\ =\ 0;}
+\DoxyCodeLine{00072\ \ \ \ \ \doxymbox{\hyperlink{classref__count}{ref\_count}}\ \_count;}
+\DoxyCodeLine{00073\ \};}
+\DoxyCodeLine{00074\ }
+\DoxyCodeLine{00075\ }
+\DoxyCodeLine{00076\ }
+\DoxyCodeLine{00077\ }
+\DoxyCodeLine{00078\ }
+\DoxyCodeLine{00079\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T>}
+\DoxyCodeLine{00080\ \textcolor{keyword}{class\ }resource\_ptr\ \{}
+\DoxyCodeLine{00081\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00083\ \ \ \ \ resource\_ptr(resource\_ptr\&\&\ other)\ noexcept\ :\ ptr(other.ptr)\ \{}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ InternalAddRef();}
+\DoxyCodeLine{00085\ \ \ \ \ \}}
+\DoxyCodeLine{00086\ \ \ \ \ resource\_ptr(resource\_ptr\&\ other)\ noexcept\ :\ ptr(other.ptr)\ \{}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ InternalAddRef();}
+\DoxyCodeLine{00088\ \ \ \ \ \}}
+\DoxyCodeLine{00089\ \ \ \ \ resource\_ptr(\textcolor{keyword}{const}\ resource\_ptr\&\ other)\ noexcept\ :\ ptr(other.ptr)\ \{}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \ \ InternalAddRef();}
+\DoxyCodeLine{00091\ \ \ \ \ \}}
+\DoxyCodeLine{00092\ }
+\DoxyCodeLine{00093\ }
+\DoxyCodeLine{00094\ \ \ \ \ resource\_ptr(T*\ owner)\ noexcept\ :\ ptr(owner)\ \{}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ InternalAddRef();}
+\DoxyCodeLine{00096\ \ \ \ \ \}}
+\DoxyCodeLine{00097\ }
+\DoxyCodeLine{00098\ }
+\DoxyCodeLine{00099\ \ \ \ \ resource\_ptr(nullptr\_t)\ noexcept\ :\ ptr(\textcolor{keyword}{nullptr})\ \{}
+\DoxyCodeLine{00100\ }
+\DoxyCodeLine{00101\ \ \ \ \ \}}
+\DoxyCodeLine{00102\ \ \ \ \ resource\_ptr()\ noexcept\ :\ ptr(\textcolor{keyword}{nullptr})\ \{}
+\DoxyCodeLine{00103\ }
+\DoxyCodeLine{00104\ \ \ \ \ \}}
+\DoxyCodeLine{00105\ }
+\DoxyCodeLine{00106\ }
+\DoxyCodeLine{00107\ \ \ \ \ resource\_ptr\&\ operator=\ (\textcolor{keyword}{const}\ resource\_ptr\&\ other)\ \{}
+\DoxyCodeLine{00108\ \ \ \ \ \ \ \ \ InternalRelease();}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ ptr\ =\ other.ptr;}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ InternalAddRef();}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00112\ \ \ \ \ \}}
+\DoxyCodeLine{00113\ }
+\DoxyCodeLine{00114\ \ \ \ \ resource\_ptr\&\ operator=(\textcolor{keyword}{const}\ resource\_ptr\&\&\ other)\ \{}
+\DoxyCodeLine{00115\ \ \ \ \ \ \ \ \ InternalRelease();}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ ptr\ =\ other.ptr;}
+\DoxyCodeLine{00117\ \ \ \ \ \ \ \ \ InternalAddRef();}
+\DoxyCodeLine{00118\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00119\ \ \ \ \ \}}
+\DoxyCodeLine{00120\ }
+\DoxyCodeLine{00121\ }
+\DoxyCodeLine{00122\ }
+\DoxyCodeLine{00123\ }
+\DoxyCodeLine{00124\ }
+\DoxyCodeLine{00125\ }
+\DoxyCodeLine{00126\ \ \ \ \ \string~resource\_ptr()\ \{}
+\DoxyCodeLine{00127\ \ \ \ \ \ \ \ \ InternalRelease();}
+\DoxyCodeLine{00128\ \ \ \ \ \}}
+\DoxyCodeLine{00129\ }
+\DoxyCodeLine{00130\ }
+\DoxyCodeLine{00131\ \ \ \ \ T*\ operator-\/>()\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ ptr;}
+\DoxyCodeLine{00133\ \ \ \ \ \}}
+\DoxyCodeLine{00134\ }
+\DoxyCodeLine{00135\ \ \ \ \ T*\ get()\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00136\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ ptr;}
+\DoxyCodeLine{00137\ \ \ \ \ \}}
+\DoxyCodeLine{00138\ }
+\DoxyCodeLine{00139\ \ \ \ \ \textcolor{keywordtype}{void}\ reset()\ \{}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ InternalRelease();}
+\DoxyCodeLine{00141\ \ \ \ \ \}}
+\DoxyCodeLine{00142\ }
+\DoxyCodeLine{00143\ }
+\DoxyCodeLine{00144\ \ \ \ \ \textcolor{keywordtype}{bool}\ operator==(resource\_ptr<T>\&\ other)\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ (ptr\ ==\ other.ptr);}
+\DoxyCodeLine{00146\ \ \ \ \ \}}
+\DoxyCodeLine{00147\ \ \ \ \ \textcolor{keywordtype}{bool}\ operator!=(resource\_ptr<T>\&\ other)\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00148\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ (ptr\ !=\ other.ptr);}
+\DoxyCodeLine{00149\ \ \ \ \ \}}
+\DoxyCodeLine{00150\ }
+\DoxyCodeLine{00151\ \ \ \ \ \textcolor{keywordtype}{bool}\ operator==(nullptr\_t)\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ ptr\ ==\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00153\ \ \ \ \ \}}
+\DoxyCodeLine{00154\ \ \ \ \ \textcolor{keywordtype}{bool}\ operator!=(nullptr\_t)\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ ptr\ !=\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00156\ \ \ \ \ \}}
+\DoxyCodeLine{00157\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00158\ \ \ \ \ T*\ ptr;}
+\DoxyCodeLine{00159\ }
+\DoxyCodeLine{00160\ \ \ \ \ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ InternalAddRef()\ \textcolor{keyword}{noexcept}\{}
+\DoxyCodeLine{00161\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (ptr\ !=\ \textcolor{keyword}{nullptr})\ \{}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ \ \ \ \ ptr-\/>addref();}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00164\ \ \ \ \ \}}
+\DoxyCodeLine{00165\ }
+\DoxyCodeLine{00166\ \ \ \ \ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ InternalRelease()\ \textcolor{keyword}{noexcept}\{}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (ptr\ !=\ \textcolor{keyword}{nullptr})\ \{}
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \ \ \ \ \ \ ptr-\/>release();}
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \ \ \ \ \ \ ptr\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00170\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00171\ }
+\DoxyCodeLine{00172\ \ \ \ \ \}}
+\DoxyCodeLine{00173\ \};}
+\DoxyCodeLine{00174\ }
+\DoxyCodeLine{00175\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T>}
+\DoxyCodeLine{00176\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_registry}{Registry}}\ \{}
+\DoxyCodeLine{00177\ \ \ \ \ \textcolor{keyword}{static\_assert}(std::is\_base\_of<IResource,\ T>::value);}
+\DoxyCodeLine{00178\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00179\ }
+\DoxyCodeLine{00180\ \ \ \ \ \textcolor{keywordtype}{void}\ set\_err\_path(\textcolor{keyword}{const}\ std::string\&\ path)\ \{}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ err\_path\ =\ path;}
+\DoxyCodeLine{00182\ }
+\DoxyCodeLine{00183\ \ \ \ \ \}}
+\DoxyCodeLine{00184\ }
+\DoxyCodeLine{00185\ \ \ \ \ \textcolor{keywordtype}{bool}\ contains(\textcolor{keyword}{const}\ std::string\&\ tag)\ \{}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ tag\_map.contains(tag);}
+\DoxyCodeLine{00187\ \ \ \ \ \}}
+\DoxyCodeLine{00188\ }
+\DoxyCodeLine{00189\ \ \ \ \ \textcolor{keywordtype}{void}\ insert(\textcolor{keyword}{const}\ std::string\&\ tag,\ std::unique\_ptr<T>\ res)\ \{}
+\DoxyCodeLine{00190\ \ \ \ \ \ \ \ \ RID\ rid\ =\ res-\/>id();}
+\DoxyCodeLine{00191\ \ \ \ \ \ \ \ \ tag\_map.insert\_or\_assign(tag,\ rid);}
+\DoxyCodeLine{00192\ \ \ \ \ \ \ \ \ map.insert\_or\_assign(rid,\ std::move(res));}
+\DoxyCodeLine{00193\ \ \ \ \ \}}
+\DoxyCodeLine{00194\ }
+\DoxyCodeLine{00195\ \ \ \ \ RID\ get\_rid(\textcolor{keyword}{const}\ std::string\&\ tag)\ \{}
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \ \ \textcolor{keyword}{auto}\ f\ =\ tag\_map.find(tag);}
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (tag\_map.contains(tag))\ \{}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ tag\_map.at(tag);}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ NULL\_RID;}
+\DoxyCodeLine{00201\ \ \ \ \ \}}
+\DoxyCodeLine{00202\ }
+\DoxyCodeLine{00203\ \ \ \ \ \doxymbox{\hyperlink{classresource__ptr}{resource\_ptr<T>}}\ get(\textcolor{keyword}{const}\ std::string\&\ tag)\ \{}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ get(get\_rid(tag));}
+\DoxyCodeLine{00205\ \ \ \ \ \}}
+\DoxyCodeLine{00206\ }
+\DoxyCodeLine{00207\ \ \ \ \ \doxymbox{\hyperlink{classresource__ptr}{resource\_ptr<T>}}\ get(RID\ \textcolor{keywordtype}{id})\ \{}
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (map.contains(\textcolor{keywordtype}{id}))\ \{}
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ map.at(\textcolor{keywordtype}{id}).get();}
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00212\ \ \ \ \ \}}
+\DoxyCodeLine{00213\ }
+\DoxyCodeLine{00214\ \ \ \ \ \doxymbox{\hyperlink{classresource__ptr}{resource\_ptr<T>}}\ get\_err()\ \{}
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ get(err\_path);}
+\DoxyCodeLine{00216\ \ \ \ \ \}}
+\DoxyCodeLine{00217\ }
+\DoxyCodeLine{00218\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00219\ \ \ \ \ std::string\ err\_path;}
+\DoxyCodeLine{00220\ \ \ \ \ std::unordered\_map<std::string,\ RID>\ tag\_map;}
+\DoxyCodeLine{00221\ \ \ \ \ std::unordered\_map<\ RID,\ std::unique\_ptr<T>>\ map;}
+\DoxyCodeLine{00222\ \};}
+\DoxyCodeLine{00223\ }
+
+\end{DoxyCode}

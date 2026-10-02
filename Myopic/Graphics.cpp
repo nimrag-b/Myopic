@@ -4,7 +4,6 @@
 #include <comdef.h>
 #include <d3dcompiler.h>
 
-#include "_dxtypeimpl.h"
 
 #include <SDL3/SDL.h>
 
@@ -47,8 +46,8 @@ gfx_err Graphics::Initialise() {
 
 	UINT dpi = GetDpiForWindow(hwnd);
 
-	uint32_t dpiWidth = dpi * defaultWindowWidth / USER_DEFAULT_SCREEN_DPI;
-	uint32_t dpiHeight = dpi * defaultWindowHeight / USER_DEFAULT_SCREEN_DPI;
+	//uint32_t dpiWidth = dpi * defaultWindowWidth / USER_DEFAULT_SCREEN_DPI;
+	//uint32_t dpiHeight = dpi * defaultWindowHeight / USER_DEFAULT_SCREEN_DPI;
 
 	HRESULT hr;
 
@@ -348,7 +347,7 @@ gfx_err Graphics::EndRender() {
 
 gfx_err Graphics::SetTexture(const Texture* texture, int slot)
 {
-	d3dDeviceContext->PSSetShaderResources(slot, 1, texture->inner()->srv.GetAddressOf());
+	d3dDeviceContext->PSSetShaderResources(slot, 1, texture->d3dSrv.GetAddressOf());
 	return gfx_err::OK;
 }
 
@@ -387,63 +386,75 @@ std::unique_ptr<Texture> Graphics::DXCreateTexture(void* pixels, int width, int 
 	initialData.SysMemPitch = pitch;
 	initialData.SysMemSlicePitch = 0;
 
-	ComPtr<ID3D11Texture2D> tex;
-	ComPtr<ID3D11ShaderResourceView> srv;
-
-	HRESULT hr = d3dDevice->CreateTexture2D(&texDesc, &initialData, tex.ReleaseAndGetAddressOf());
-
-
-	CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(
-		D3D11_SRV_DIMENSION_TEXTURE2D
-	);
-
-	hr = d3dDevice->CreateShaderResourceView(tex.Get(), &srvDesc, srv.ReleaseAndGetAddressOf());
-
-	Texture::TextureImpl* impl = new Texture::TextureImpl;
-	impl->srv = srv;
-
-	return std::make_unique<Texture>(impl);
+	return std::unique_ptr<Texture>(new Texture(d3dDevice.Get(),&texDesc, &initialData));
 }
 
 
 gfx_err Graphics::SetShader(const Shader* shader) {
 	if (shader == nullptr) return gfx_err::NULL_ERROR;
-	Shader::ShaderImpl* impl = shader->inner();
-	d3dDeviceContext->VSSetShader(impl->d3dVertexShader.Get(), nullptr, 0);
-	d3dDeviceContext->PSSetShader(impl->d3dPixelShader.Get(), nullptr, 0);
+	d3dDeviceContext->VSSetShader(shader->d3dVertexShader.Get(), nullptr, 0);
+	d3dDeviceContext->PSSetShader(shader->d3dPixelShader.Get(), nullptr, 0);
 
-	if (currentVertexLayout == nullptr || (currentVertexLayout->layout() != impl->Layout().layout())) {
-		currentVertexLayout = &impl->Layout();
+	if (currentVertexLayout == nullptr || (currentVertexLayout->layout() != shader->Layout().layout())) {
+		currentVertexLayout = &shader->Layout();
 		d3dDeviceContext->IASetInputLayout(currentVertexLayout->layout());
 	}
 	return gfx_err::OK;
 }
 
-gfx_err Graphics::SetMaterial(const Material* material, ObjectDataBuffer& buffer)
+gfx_err Graphics::SetMaterial(const Material* material)
 {
-	SetShader(material->shader);
-	SetTexture(material->texture, 0);
-	SetTexture(material->normal, 1);
+	SetShader(material->shader.get());
+	SetTexture(material->texture.get(), 0);
+	SetTexture(material->normal.get(), 1);
 
+	return gfx_err::OK;
+}
+
+gfx_err Graphics::UpdateObjectProps(const Material* material, ObjectDataBuffer& buffer) {
 	buffer.fresnelRange = material->fresnelRange;
 	buffer.meshColor = material->meshColour;
 	buffer.specular = material->specular;
-
 	return gfx_err::OK;
 }
 
 gfx_err Graphics::RenderMesh(const Mesh* mesh, int subMesh) {
 	if (mesh == nullptr) return gfx_err::NULL_ERROR;
-	Mesh::MeshImpl* impl = mesh->inner();
-	UINT stride = static_cast<UINT>(impl->stride);
+	UINT stride = static_cast<UINT>(mesh->stride);
 	UINT offset = 0;
 	//bind mesh
-	d3dDeviceContext->IASetVertexBuffers(0, 1, impl->d3dVertexBuffer.GetAddressOf(), &stride, &offset);
+	d3dDeviceContext->IASetVertexBuffers(0, 1, mesh->d3dVertexBuffer.GetAddressOf(), &stride, &offset);
 
 	//bind vertices
-	d3dDeviceContext->IASetIndexBuffer(impl->subMeshes[subMesh].indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+	d3dDeviceContext->IASetIndexBuffer(mesh->subMeshes[subMesh].indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 	d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	d3dDeviceContext->DrawIndexed(static_cast<UINT>(impl->subMeshes[subMesh].indexCount), 0, 0);
+	d3dDeviceContext->DrawIndexed(static_cast<UINT>(mesh->subMeshes[subMesh].indexCount), 0, 0);
+
+	return gfx_err::OK;
+}
+
+gfx_err Graphics::RenderModel(const Model* model, ::XMFLOAT4X4& transform)
+{
+	ObjectDataBuffer odb;
+	odb.worldMatrix = transform;
+
+	Mesh* mesh = model->mesh.get();
+
+	for (size_t i = 0; i < mesh->subMeshCount; i++) {
+
+		size_t m = min(i, model->material_count);
+
+		Material* mat = model->materials[m].get();
+		SetMaterial(mat);
+		UpdateObjectProps(mat, odb);
+		d3dDeviceContext.Get()->UpdateSubresource(d3dObjectDataBuffer.Get(), 0, nullptr, &odb, 0, 0);
+
+		SetTexture(mat->texture.get(), 0);
+		SetTexture(mat->normal.get(), 1);
+
+		RenderMesh(mesh, (int)i);
+	}
+
 
 	return gfx_err::OK;
 }
@@ -467,8 +478,8 @@ std::unique_ptr<Shader> Graphics::LoadShader(const std::string& vertex, const st
 
 std::unique_ptr<Shader> Graphics::DXCreateShader(ComPtr<ID3D11VertexShader> vertex, ComPtr<ID3D11PixelShader> pixel, const VertexLayout& layout)
 {
-	Shader::ShaderImpl* shader = new Shader::ShaderImpl(pixel, vertex, layout);
-	return std::make_unique<Shader>(shader);
+	Shader* shader = new Shader(pixel, vertex, layout);
+	return std::unique_ptr<Shader>(shader);
 }
 
 bool Graphics::DXCompileShader(const std::wstring& fileName, const std::string& entryPoint, const std::string& profile, ComPtr<ID3DBlob>& shaderBlob)
@@ -581,10 +592,10 @@ ComPtr<ID3D11PixelShader> Graphics::DXCreatePixelShader(const std::wstring& file
 }
 
 std::unique_ptr<Mesh> Graphics::CreateMeshFlat(void* vertices, size_t count, size_t stride, int subMeshCount) {
-	Mesh::MeshImpl* mesh = new Mesh::MeshImpl;
+	std::unique_ptr<Mesh> mesh(new Mesh);
 	mesh->vertexCount = count;
 	mesh->subMeshCount = subMeshCount;
-	mesh->subMeshes = std::make_unique<Mesh::MeshImpl::index_group[]>(subMeshCount);
+	mesh->subMeshes = std::make_unique<Mesh::index_group[]>(subMeshCount);
 	mesh->stride = stride;
 
 	D3D11_BUFFER_DESC bd = { 0 };
@@ -601,16 +612,16 @@ std::unique_ptr<Mesh> Graphics::CreateMeshFlat(void* vertices, size_t count, siz
 		d3dDevice->CreateBuffer(&bd, &initData, &mesh->d3dVertexBuffer)
 	);
 
-	return std::make_unique<Mesh>(mesh);
+	return std::move(mesh);
 }
 
 void Graphics::SetSubMesh(const std::unique_ptr<Mesh>& mesh, const int subMesh, std::vector<uint32_t>& indices) {
 
-	if (subMesh < 0 || subMesh >= mesh->inner()->subMeshCount) {
+	if (subMesh < 0 || subMesh >= mesh->subMeshCount) {
 		throw std::exception();
 	}
 
-	Mesh::MeshImpl::index_group& group = mesh->inner()->subMeshes[subMesh];
+	Mesh::index_group& group = mesh->subMeshes[subMesh];
 
 	group.indexCount = indices.size();
 
@@ -761,14 +772,14 @@ bool Graphics::DXUpdateWindowResources()
 
 
 	float aspectRatio = static_cast<float>(windowWidth) / static_cast<float>(windowHeight);
-	float fovAngleY = 90.0f * DirectX::XM_PI / 180.0f;
+	float fovAngleY = 60.0f * DirectX::XM_PI / 180.0f;
 
 	// This sample makes use of a right-handed coordinate system using row-major matrices.
 	DirectX::XMMATRIX perspectiveMatrix = DirectX::XMMatrixPerspectiveFovRH(
 		fovAngleY,
 		aspectRatio,
 		0.01f,
-		5000.0f
+		1000.0f
 	);
 
 	projection = DirectX::XMMatrixTranspose(perspectiveMatrix);

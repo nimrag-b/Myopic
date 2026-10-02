@@ -1,0 +1,76 @@
+\doxysection{Assets.\+h}
+\hypertarget{_assets_8h_source}{}\label{_assets_8h_source}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}Graphics.h"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}Resource.h"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}ResourceLocation.h"{}}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }Assets}
+\DoxyCodeLine{00008\ \{}
+\DoxyCodeLine{00009\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00010\ \ \ \ \ Assets(\doxymbox{\hyperlink{class_graphics}{Graphics}}\&\ gfx)\ :\ gfx(gfx)\ \{}
+\DoxyCodeLine{00011\ \ \ \ \ \ \ \ \ CreateDefaults();}
+\DoxyCodeLine{00012\ \ \ \ \ \}}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{keywordtype}{void}\ CreateShader(\textcolor{keyword}{const}\ std::string\&\ tag,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_resource_location}{ResourceLocation}}\&\ vertex,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_resource_location}{ResourceLocation}}\&\ fragment,\ \doxymbox{\hyperlink{class_vertex_layout}{VertexLayout}}*\ layout);}
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keywordtype}{void}\ LoadMesh(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_resource_location}{ResourceLocation}}\&\ tag);}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keywordtype}{void}\ LoadTexture(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_resource_location}{ResourceLocation}}\&\ tag);}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \ \ \ \ \doxymbox{\hyperlink{classresource__ptr}{resource\_ptr<Mesh>}}\ GetOrCreateMesh(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_resource_location}{ResourceLocation}}\&\ tag);}
+\DoxyCodeLine{00019\ \ \ \ \ \doxymbox{\hyperlink{classresource__ptr}{resource\_ptr<Texture>}}\ GetOrCreateTexture(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_resource_location}{ResourceLocation}}\&\ tag);}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keywordtype}{void}\ CreateMaterial(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_resource_location}{ResourceLocation}}\&\ name,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_material_def}{MaterialDef}}\&\ def);}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keyword}{template}<\textcolor{keyword}{typename}\ T>}
+\DoxyCodeLine{00024\ \ \ \ \ \textcolor{keywordtype}{void}\ Register(\textcolor{keyword}{const}\ std::string\&\ tag,\ std::unique\_ptr<T>\ res)\ \{}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ GetRegistry<T>().insert(tag,\ std::move(res));}
+\DoxyCodeLine{00026\ \ \ \ \ \}}
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ \ \ \ \ \textcolor{keyword}{template}<\textcolor{keyword}{typename}\ T>}
+\DoxyCodeLine{00029\ \ \ \ \ \doxymbox{\hyperlink{classresource__ptr}{resource\_ptr<T>}}\ Get(\textcolor{keyword}{const}\ std::string\&\ tag)\ \{}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ GetRegistry<T>().get(tag);}
+\DoxyCodeLine{00031\ \ \ \ \ \}}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T>}
+\DoxyCodeLine{00034\ \ \ \ \ \doxymbox{\hyperlink{class_registry}{Registry<T>}}\&\ GetRegistry()\ \{}
+\DoxyCodeLine{00035\ \ \ \ \ \ \ \ \ \textcolor{keyword}{static\_assert}(\textcolor{keyword}{false});}
+\DoxyCodeLine{00036\ \ \ \ \ \}}
+\DoxyCodeLine{00037\ \ \ \ \ \textcolor{keyword}{template}\ <>}
+\DoxyCodeLine{00038\ \ \ \ \ \doxymbox{\hyperlink{class_registry}{Registry<Shader>}}\&\ GetRegistry()\ \{}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ shaders;}
+\DoxyCodeLine{00040\ \ \ \ \ \}}
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keyword}{template}\ <>}
+\DoxyCodeLine{00043\ \ \ \ \ \doxymbox{\hyperlink{class_registry}{Registry<Mesh>}}\&\ GetRegistry()\ \{}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ meshes;}
+\DoxyCodeLine{00045\ \ \ \ \ \}}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{keyword}{template}\ <>}
+\DoxyCodeLine{00048\ \ \ \ \ \doxymbox{\hyperlink{class_registry}{Registry<Texture>}}\&\ GetRegistry()\ \{}
+\DoxyCodeLine{00049\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ textures;}
+\DoxyCodeLine{00050\ \ \ \ \ \}}
+\DoxyCodeLine{00051\ }
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{keyword}{template}\ <>}
+\DoxyCodeLine{00053\ \ \ \ \ \doxymbox{\hyperlink{class_registry}{Registry<Material>}}\&\ GetRegistry()\ \{}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ materials;}
+\DoxyCodeLine{00055\ \ \ \ \ \}}
+\DoxyCodeLine{00056\ }
+\DoxyCodeLine{00057\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{keywordtype}{void}\ CreateDefaults();}
+\DoxyCodeLine{00060\ }
+\DoxyCodeLine{00061\ \ \ \ \ \doxymbox{\hyperlink{class_graphics}{Graphics}}\&\ gfx;}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00063\ \ \ \ \ std::unordered\_map<std::string,\ ComPtr<ID3D11VertexShader>>\ d3dVertexShaders;}
+\DoxyCodeLine{00064\ \ \ \ \ std::unordered\_map<std::string,\ ComPtr<ID3D11PixelShader>>\ d3dPixelShaders;}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \ \ \ \ \doxymbox{\hyperlink{class_registry}{Registry<Material>}}\ materials;}
+\DoxyCodeLine{00067\ \ \ \ \ \doxymbox{\hyperlink{class_registry}{Registry<Texture>}}\ textures;}
+\DoxyCodeLine{00068\ \ \ \ \ \doxymbox{\hyperlink{class_registry}{Registry<Shader>}}\ shaders;}
+\DoxyCodeLine{00069\ \ \ \ \ \doxymbox{\hyperlink{class_registry}{Registry<Mesh>}}\ meshes;}
+\DoxyCodeLine{00070\ \};}
+\DoxyCodeLine{00071\ }
+
+\end{DoxyCode}

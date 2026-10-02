@@ -13,28 +13,6 @@ typedef uint32_t RID; /* Resource ID*/
 
 constexpr RID NULL_RID = 0;
 
-class IResource {
-public:
-	IResource();
-
-	~IResource() = default;
-
-	inline bool operator==(IResource& r) {
-		return _ID == r._ID;
-	}
-	inline bool operator!=(IResource& r) {
-		return _ID != r._ID;
-	}
-
-	RID id() const {
-		return _ID;
-	}
-
-private:
-	RID _ID = 0;
-};
-
-
 class ref_count {
 public:
 
@@ -57,95 +35,105 @@ private:
 };
 
 
-
-template <typename T>
-class resource_owner {
+class IResource {
 public:
-	resource_owner(std::unique_ptr<T> ptr) : ptr(ptr.release()) {
+	IResource();
+
+	~IResource() {
+		std::cout << "delete " << _id << std::endl;
 	}
 
-	~resource_owner() {
-		//Potential err if not created with new - may need to extract deleter from unique_ptr
-		delete ptr;
+	inline bool operator==(IResource& r) {
+		return _id == r._id;
+	}
+	inline bool operator!=(IResource& r) {
+		return _id != r._id;
 	}
 
-	T* get() {
-		return ptr;
+	inline RID id() const {
+		return _id;
 	}
 
-	T* addref() {
-		auto r = count.AddRef();
-		std::cout << ptr << "++ : " << r << std::endl;
-		return ptr;
+	inline unsigned long addref() {
+		auto r = _count.AddRef();
+		std::cout << _id << "++ : " << r << std::endl;
+		return r;
 	}
 
-	void release() {
-		auto r = count.RemoveRef();
-		std::cout << ptr << "-- : " << r << std::endl;
+	inline unsigned long release() {
+		auto r = _count.RemoveRef();
+		std::cout << _id << "-- : " << r << std::endl;
+		return r;
 	}
 
-	unsigned long references() const {
-		return count.Count();
-	}
+
 private:
-	T* ptr;
-	ref_count count;
+	RID _id = 0;
+	ref_count _count;
 };
+
+
+
 
 
 template <typename T>
 class resource_ptr {
 public:
-	resource_ptr() : ptr(nullptr) {
 
-	}
-	resource_ptr(nullptr_t) : ptr(nullptr) {
-
-	}
-	resource_ptr(const resource_ptr& other) : ptr(other.ptr) {
+	resource_ptr(resource_ptr&& other) noexcept : ptr(other.ptr) {
 		InternalAddRef();
 	}
-	resource_ptr& operator= (const resource_ptr&) = delete;
-
-	resource_ptr(resource_ptr&& other) {
-		swap(other);
+	resource_ptr(resource_ptr& other) noexcept : ptr(other.ptr) {
+		InternalAddRef();
+	}
+	resource_ptr(const resource_ptr& other) noexcept : ptr(other.ptr) {
+		InternalAddRef();
 	}
 
-	resource_ptr& operator=(const resource_ptr&& p) {
-		InternalRelease();
-		this->ptr = p.ptr;
-		if (this->ptr != nullptr) {
-			this->ptr->addref();
-		}
 
+	resource_ptr(T* owner) noexcept : ptr(owner) {
+		InternalAddRef();
+	}
+
+
+	resource_ptr(nullptr_t) noexcept : ptr(nullptr) {
+
+	}
+	resource_ptr() noexcept : ptr(nullptr) {
+
+	}
+
+
+	resource_ptr& operator= (const resource_ptr& other) {
+		InternalRelease();
+		ptr = other.ptr;
+		InternalAddRef();
+		return *this;
+	}
+
+	resource_ptr& operator=(const resource_ptr&& other) {
+		InternalRelease();
+		ptr = other.ptr;
+		InternalAddRef();
 		return *this;
 	}
 
 
 
-	resource_ptr(resource_owner<T>& owner) : ptr(&owner) {
-		InternalAddRef();
-	}
+
 
 
 	~resource_ptr() {
 		InternalRelease();
 	}
 
-	void swap(resource_ptr& r)
-	{
-		resource_owner<T>* tmp = ptr;
-		ptr = r.ptr;
-		r.ptr = tmp;
+
+	T* operator->() const {
+		return ptr;
 	}
 
-
-	T* operator->() {
-		return ptr->get();
-	}
-
-	T* get() {
-		return ptr->get();
+	T* get() const {
+		return ptr;
 	}
 
 	void reset() {
@@ -153,29 +141,29 @@ public:
 	}
 
 
-	bool operator==(resource_ptr<T>& other) {
+	bool operator==(resource_ptr<T>& other) const {
 		return (ptr == other.ptr);
 	}
-	bool operator!=(resource_ptr<T>& other) {
+	bool operator!=(resource_ptr<T>& other) const {
 		return (ptr != other.ptr);
 	}
 
-	bool operator==(nullptr_t) {
+	bool operator==(nullptr_t) const {
 		return ptr == nullptr;
 	}
-	bool operator!=(nullptr_t) {
+	bool operator!=(nullptr_t) const {
 		return ptr != nullptr;
 	}
 private:
-	resource_owner<T>* ptr;
+	T* ptr;
 
-	void InternalAddRef() {
+	inline void InternalAddRef() noexcept{
 		if (ptr != nullptr) {
 			ptr->addref();
 		}
 	}
 
-	void InternalRelease() {
+	inline void InternalRelease() noexcept{
 		if (ptr != nullptr) {
 			ptr->release();
 			ptr = nullptr;
@@ -202,8 +190,6 @@ public:
 		RID rid = res->id();
 		tag_map.insert_or_assign(tag, rid);
 		map.insert_or_assign(rid, std::move(res));
-		//auto v = map.insert_or_assign(rid, resource_owner<T>{std::move(res)});
-		//map.insert({ res->id(), std::move(res)});
 	}
 
 	RID get_rid(const std::string& tag) {
@@ -220,14 +206,18 @@ public:
 
 	resource_ptr<T> get(RID id) {
 		if (map.contains(id)) {
-			return map.at(id);
+			return map.at(id).get();
 		}
-		return map.at(get_rid(err_path));
+		return nullptr;
+	}
+
+	resource_ptr<T> get_err() {
+		return get(err_path);
 	}
 
 private:
 	std::string err_path;
 	std::unordered_map<std::string, RID> tag_map;
-	std::unordered_map< RID, resource_owner<T>> map;
+	std::unordered_map< RID, std::unique_ptr<T>> map;
 };
 

@@ -1,0 +1,86 @@
+\doxysection{Resource\+Location.\+h}
+\hypertarget{_resource_location_8h_source}{}\label{_resource_location_8h_source}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <iostream>}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{class\ }ResourceLocation\ \{}
+\DoxyCodeLine{00006\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \ \ \ \ ResourceLocation(nullptr\_t)\ :\ \_path(),\ \_namespace()\ \{}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \ \ \ \ \}}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \ \ \ \ ResourceLocation(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ path)\ :\ ResourceLocation(std::string(path))\ \{}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \ \ \ \ \}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \ \ \ \ ResourceLocation(\textcolor{keyword}{const}\ std::string\&\ path)\ \{}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ n\ =\ path.find(\textcolor{charliteral}{':'});}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (n\ ==\ std::string::npos)\ \{}
+\DoxyCodeLine{00023\ \ \ \ \ \ \ \ \ \ \ \ \ \_namespace\ =\ \textcolor{stringliteral}{"{}myopic"{}};}
+\DoxyCodeLine{00024\ \ \ \ \ \ \ \ \ \ \ \ \ \_path\ =\ path;}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00026\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \{}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \ \ \ \ \ \ \_namespace\ =\ path.substr(0,\ n);}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ \ \ \ \ \ \ \_path\ =\ path.substr(n\ +\ 1);}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\_namespace.find\_first\_not\_of(\textcolor{stringliteral}{"{}abcdefghijklmnopqrstuvwxyz"{}})\ !=\ std::string::npos)\ \{}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Invalid\ Namespace\ for\ path\ '"{}}\ <<\ path\ <<\ \textcolor{stringliteral}{"{}'"{}}\ <<\ std::endl;}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ \ \ \ \ SetError();}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00035\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\_path.find\_first\_not\_of(\textcolor{stringliteral}{"{}abcdefghijklmnopqrstuvwxyz123456789\_."{}})\ !=\ std::string::npos)\ \{}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Invalid\ Path\ for\ path\ '"{}}\ <<\ path\ <<\ \textcolor{stringliteral}{"{}'"{}}\ <<\ std::endl;}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \ \ \ \ \ \ SetError();}
+\DoxyCodeLine{00040\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00042\ \ \ \ \ \}}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00044\ \ \ \ \ \textcolor{keywordtype}{bool}\ empty()\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \_path.empty();}
+\DoxyCodeLine{00046\ \ \ \ \ \}}
+\DoxyCodeLine{00047\ }
+\DoxyCodeLine{00048\ \ \ \ \ \textcolor{keyword}{const}\ std::string\&\ GetNamespace()\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00049\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \_namespace;}
+\DoxyCodeLine{00050\ \ \ \ \ \}}
+\DoxyCodeLine{00051\ }
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{keyword}{const}\ std::string\&\ GetPath()\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \_path;}
+\DoxyCodeLine{00054\ \ \ \ \ \}}
+\DoxyCodeLine{00055\ }
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{keyword}{const}\ std::string\ ToString()\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \_namespace\ +\ \textcolor{charliteral}{':'}\ +\ \_path;}
+\DoxyCodeLine{00058\ \ \ \ \ \}}
+\DoxyCodeLine{00059\ }
+\DoxyCodeLine{00060\ \ \ \ \ std::string\ Filepath(\textcolor{keyword}{const}\ std::string\&\ subfolder,\ \textcolor{keyword}{const}\ std::string\&\ ext\ =\ \textcolor{stringliteral}{"{}"{}})\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ std::string\ res\ =\ \_namespace\ +\ \textcolor{charliteral}{'/'}\ +\ subfolder\ +\ \textcolor{charliteral}{'/'}\ +\ \_path;}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ i\ =\ 0;\ i\ <\ res.size();\ i++)\ \{}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (res[i]\ ==\ \textcolor{charliteral}{'.'})\ \{}
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ res[i]\ =\ \textcolor{charliteral}{'/'};}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ res\ +=\ ext;}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ res;}
+\DoxyCodeLine{00070\ \ \ \ \ \}}
+\DoxyCodeLine{00071\ }
+\DoxyCodeLine{00072\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00073\ }
+\DoxyCodeLine{00074\ \ \ \ \ \textcolor{keywordtype}{void}\ SetError()\ \{}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \_namespace\ =\ \textcolor{stringliteral}{"{}myopic"{}};}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ \_path\ =\ \textcolor{stringliteral}{"{}error.error"{}};}
+\DoxyCodeLine{00077\ \ \ \ \ \}}
+\DoxyCodeLine{00078\ }
+\DoxyCodeLine{00079\ \ \ \ \ std::string\ \_namespace;}
+\DoxyCodeLine{00080\ \ \ \ \ std::string\ \_path;}
+\DoxyCodeLine{00081\ \};}
+
+\end{DoxyCode}

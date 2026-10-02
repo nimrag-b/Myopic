@@ -1,6 +1,8 @@
 #include "Graphics2D.h"
 #include "GameError.h"
 
+#include <string>
+
 
 #pragma comment (lib, "D2d1.lib")
 #pragma comment (lib, "Dwrite.lib")
@@ -99,6 +101,8 @@ gfx_err Graphics2D::DestroyTarget() {
 	return gfx_err::OK;
 }
 
+int avg_fps();
+
 gfx_err Graphics2D::Render() {
 #ifdef MYOPIC_STRIP_D2D
 	return gfx_err::OK;
@@ -110,21 +114,20 @@ gfx_err Graphics2D::Render() {
 	d2dDeviceContext->BeginDraw();
 
 	//d2dDeviceContext->FillRectangle(D2D1::RectF(100, 100, 200, 200), solidBrush.Get());
+	int fps = avg_fps();
 
-
-	static const WCHAR sc_helloWorld[] = L"Hello, World!";
+	const std::wstring sc_helloWorld = std::to_wstring(fps) + L"ms";
 
 	d2dDeviceContext->DrawTextW(
-		sc_helloWorld,
-		ARRAYSIZE(sc_helloWorld) - 1,
+		sc_helloWorld.c_str(),
+		sc_helloWorld.length(),
 		d2dTextFormat.Get(),
 		D2D1::RectF(0, 0, width, height),
 		solidBrush.Get()
 	);
 
-	D2D1_TAG tag;
-
-	hr = d2dDeviceContext->EndDraw(&tag);
+	//FIXME this is incredibly slow for some reason, so fix in future!
+	hr = d2dDeviceContext->EndDraw();
 
 	return gfx_err::OK;
 }

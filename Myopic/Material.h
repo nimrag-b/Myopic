@@ -9,12 +9,13 @@
 
 //a struct that defines the properties of a material
 struct MaterialDef {
+	ResourceLocation shader;
+	ResourceLocation texture = nullptr;
+	ResourceLocation normal = nullptr;
+
 	DirectX::XMFLOAT4 colour = { 1,1,1,1 };
 	float specular = 0.2f;
 	DirectX::XMFLOAT3 fresnelRange = { 0,0.5f,1 };
-	ResourceLocation shader;
-	ResourceLocation texture;
-	ResourceLocation normal;
 
 };
 
@@ -37,7 +38,7 @@ public:
 	const DirectX::XMFLOAT4 meshColour;
 	const float specular;
 	const DirectX::XMFLOAT3 fresnelRange;
-	const Shader* const shader;
-	const Texture* const texture; //resource view into texture
-	const Texture* const normal; //resource view into texture
+	const resource_ptr<Shader> const shader;
+	const resource_ptr<Texture> const texture; //resource view into texture
+	const resource_ptr<Texture> const normal; //resource view into texture
 };

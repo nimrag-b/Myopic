@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.37111.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Myopic", "Myopic\Myopic.vcxproj", "{3F444F73-72B2-4198-94E7-E1CC4EA13932}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MeshCompiler", "MeshCompiler\MeshCompiler.vcxproj", "{0C2590D4-212B-4CDC-A89B-0DAD9AB5EF82}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{3F444F73-72B2-4198-94E7-E1CC4EA13932}.Release|x64.Build.0 = Release|x64
 		{3F444F73-72B2-4198-94E7-E1CC4EA13932}.Release|x86.ActiveCfg = Release|Win32
 		{3F444F73-72B2-4198-94E7-E1CC4EA13932}.Release|x86.Build.0 = Release|Win32
+		{0C2590D4-212B-4CDC-A89B-0DAD9AB5EF82}.Debug|x64.ActiveCfg = Debug|x64
+		{0C2590D4-212B-4CDC-A89B-0DAD9AB5EF82}.Debug|x64.Build.0 = Debug|x64
+		{0C2590D4-212B-4CDC-A89B-0DAD9AB5EF82}.Debug|x86.ActiveCfg = Debug|Win32
+		{0C2590D4-212B-4CDC-A89B-0DAD9AB5EF82}.Debug|x86.Build.0 = Debug|Win32
+		{0C2590D4-212B-4CDC-A89B-0DAD9AB5EF82}.Release|x64.ActiveCfg = Release|x64
+		{0C2590D4-212B-4CDC-A89B-0DAD9AB5EF82}.Release|x64.Build.0 = Release|x64
+		{0C2590D4-212B-4CDC-A89B-0DAD9AB5EF82}.Release|x86.ActiveCfg = Release|Win32
+		{0C2590D4-212B-4CDC-A89B-0DAD9AB5EF82}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

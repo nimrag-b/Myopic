@@ -147,6 +147,7 @@
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="Graphics2D.cpp" />
     <ClCompile Include="Material.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="Myopic.cpp" />
     <ClCompile Include="Resource.cpp" />
     <ClCompile Include="Assets.cpp" />
@@ -159,12 +160,12 @@
     <ClInclude Include="GraphicsDef.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Assets.h" />
     <ClInclude Include="ResourceLocation.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Texture.h" />
-    <ClInclude Include="_dxtypeimpl.h" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="heavy.naf">

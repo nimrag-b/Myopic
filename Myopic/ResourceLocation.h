@@ -5,6 +5,10 @@
 class ResourceLocation {
 public:
 
+	ResourceLocation(nullptr_t) : _path(), _namespace() {
+
+	}
+
 	ResourceLocation(const char* path) : ResourceLocation(std::string(path)) {
 
 	}
