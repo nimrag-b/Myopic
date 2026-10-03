@@ -8,6 +8,9 @@
 
 #include <vector>
 #include <fstream>
+#include <optional>
+
+#include <limits>
 
 #define NGE_VERSION 1
 #define NGE_FORMAT_GVERTEX 1
@@ -20,6 +23,30 @@ struct mesh_part {
     uint32_t material_index;
     std::vector<float> verts;
     std::vector<uint32_t> indices;
+};
+
+constexpr float max_float = std::numeric_limits<float>::max();
+
+struct float4 {
+
+    float x, y, z, w;
+
+    static constexpr float4 max() {
+        return float4{ max_float ,max_float ,max_float ,max_float };
+    }
+
+    bool operator ==(float4& other) const {
+        return (x == other.x) && (y == other.y) && (z == other.z) && (w == other.w);
+    }
+
+};
+
+
+struct material_part {
+    std::string diffuse;
+    std::string normal;
+    float4 colour = float4::max();
+    float specular = std::numeric_limits<float>::max();
 };
 
 void print_vec(aiVector3D& vec) {
@@ -113,7 +140,47 @@ void GetMeshPart(const aiMesh* mesh, mesh_part* part) {
     std::cout << std::endl;
 }
 
-bool GetMeshPartsForFile(const std::string& inFile, std::vector<mesh_part>& parts) {
+
+
+bool GetMaterialPart(const aiMaterial* mat, material_part* part) {
+
+    std::string matName = mat->GetName().C_Str();
+
+    aiString path;
+    float fVal;
+    aiColor3D col;
+
+    if (mat->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), path) == aiReturn_SUCCESS) {
+
+        part->diffuse = path.C_Str();
+        //mfs << "Diffuse = " << path.C_Str() << std::endl;
+    }
+    if (mat->Get(AI_MATKEY_TEXTURE(aiTextureType_NORMALS, 0), path) == aiReturn_SUCCESS) {
+        part->normal = path.C_Str();
+        //mfs << "Normal = " << path.C_Str() << std::endl;
+    }
+    if (mat->Get(AI_MATKEY_SHININESS, fVal) == aiReturn_SUCCESS) {
+        part->specular = fVal;
+        //mfs << "Specular = " << path.C_Str() << std::endl;
+    }
+
+    if (mat->Get(AI_MATKEY_COLOR_DIFFUSE, col) == aiReturn_SUCCESS) {
+        part->colour = { col.r,col.g,col.b,1 };
+        //mfs << "Specular = " << path.C_Str() << std::endl;
+    }
+
+    for (size_t i = 0; i < mat->mNumProperties; i++)
+    {
+
+        aiMaterialProperty* prop = mat->mProperties[i];
+        //mat->Get(prop->mKey,)
+        std::cout << prop->mKey.C_Str() << std::endl;
+    }
+
+    return true;
+}
+
+bool GetPartsForFile(const std::string& inFile, std::vector<mesh_part>& meshes, std::vector<material_part>& materials) {
 
 
     // Create an instance of the Importer class
@@ -127,7 +194,7 @@ bool GetMeshPartsForFile(const std::string& inFile, std::vector<mesh_part>& part
         aiProcess_Triangulate |
         aiProcess_JoinIdenticalVertices |
         aiProcess_SortByPType |
-        (aiProcess_MakeLeftHanded | aiProcess_FlipUVs | 0));
+        (aiProcess_MakeLeftHanded | aiProcess_FlipUVs /* | aiProcess_FlipWindingOrder */ | 0));
 
     // If the import failed, report it
     if (nullptr == scene) {
@@ -139,7 +206,7 @@ bool GetMeshPartsForFile(const std::string& inFile, std::vector<mesh_part>& part
 
     for (size_t i = 0; i < scene->mNumMeshes; i++) {
         std::cout << "Mesh " << i << std::endl;
-        mesh_part& part = parts.emplace_back();
+        mesh_part& part = meshes.emplace_back();
         GetMeshPart(scene->mMeshes[i], &part);
     }
 
@@ -147,27 +214,31 @@ bool GetMeshPartsForFile(const std::string& inFile, std::vector<mesh_part>& part
     std::string matName;
     for (size_t i = 0; i < scene->mNumMaterials; i++)
     {
-        aiMaterial* mat = scene->mMaterials[i];
-        matName = mat->GetName().C_Str();
-        matName += ".mat";
-        mfs.open(matName);
+        std::cout << "Material " << i << std::endl;
+        material_part& part = materials.emplace_back();
+        GetMaterialPart(scene->mMaterials[i], &part);
 
-        mfs << i << std::endl;
+        //aiMaterial* mat = scene->mMaterials[i];
+        //matName = mat->GetName().C_Str();
+        //matName += ".mat";
+        //mfs.open(matName);
 
-        mfs << mat->GetName().C_Str() << std::endl << std::endl;
+        //mfs << i << std::endl;
 
-        aiString path;
+        //mfs << mat->GetName().C_Str() << std::endl << std::endl;
 
-        
-        if (mat->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), path) == aiReturn_SUCCESS) {
-            mfs << "Diffuse = " << path.C_Str() << std::endl;       
-        }
-        if (mat->Get(AI_MATKEY_TEXTURE(aiTextureType_NORMALS, 0), path) == aiReturn_SUCCESS) {
-            mfs << "Normal = " << path.C_Str() << std::endl;
-        }
-        if (mat->Get(AI_MATKEY_SHININESS, path) == aiReturn_SUCCESS) {
-            mfs << "Specular = " << path.C_Str() << std::endl;
-        }
+        //aiString path;
+
+        //
+        //if (mat->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), path) == aiReturn_SUCCESS) {
+        //    mfs << "Diffuse = " << path.C_Str() << std::endl;       
+        //}
+        //if (mat->Get(AI_MATKEY_TEXTURE(aiTextureType_NORMALS, 0), path) == aiReturn_SUCCESS) {
+        //    mfs << "Normal = " << path.C_Str() << std::endl;
+        //}
+        //if (mat->Get(AI_MATKEY_SHININESS, path) == aiReturn_SUCCESS) {
+        //    mfs << "Specular = " << path.C_Str() << std::endl;
+        //}
 
         
         //mfs << std::endl;
@@ -179,13 +250,13 @@ bool GetMeshPartsForFile(const std::string& inFile, std::vector<mesh_part>& part
         //    mfs << std::endl;
         //}
 
-        mfs.close();
+        //mfs.close();
     }
 
     return true;
 }
 
-bool CompileToNGE(const std::string& outFile, std::vector<mesh_part>& parts) {
+bool CompileToNGE(const std::string& outFile, std::vector<mesh_part>& meshes, std::vector<material_part>& materials) {
 
     //write file header
     std::ofstream fs;
@@ -203,8 +274,12 @@ bool CompileToNGE(const std::string& outFile, std::vector<mesh_part>& parts) {
 
 
     //write the mesh count
-    uint32_t numMeshes = parts.size();
+    uint32_t numMeshes = meshes.size();
     fs.write((char*)&numMeshes, sizeof(uint32_t));
+
+    //write the material count
+    uint32_t numMaterials = materials.size();
+    fs.write((char*)&numMaterials, sizeof(uint32_t));
 
     //padding for future expanding of format without breaking compat
     uint32_t padding[4] = { 0 };
@@ -212,9 +287,9 @@ bool CompileToNGE(const std::string& outFile, std::vector<mesh_part>& parts) {
 
 
     // Iterate over meshes and write each one to file
-    for (size_t i = 0; i < parts.size(); i++)
+    for (size_t i = 0; i < meshes.size(); i++)
     {
-        auto& it = parts[i];
+        auto& it = meshes[i];
 
 
 
@@ -235,6 +310,35 @@ bool CompileToNGE(const std::string& outFile, std::vector<mesh_part>& parts) {
 
         section_header(fs, ".index", it.indices.size() * sizeof(uint32_t));
         fs.write((char*)it.indices.data(), it.indices.size() * sizeof(uint32_t));
+    }
+
+    for (size_t i = 0; i < materials.size(); i++)
+    {
+        auto& it = materials[i];
+
+        //switch to next material
+        static char mat_section[] = ".mat";
+
+        fs.write(mat_section, sizeof(mat_section));
+
+        if (!it.diffuse.empty()) {
+            section_header(fs, ".diffuse", it.diffuse.size());
+            fs << it.diffuse;
+        }
+        if (!it.normal.empty()) {
+            section_header(fs, ".normal", it.normal.size());
+            fs << it.normal;
+        }
+        if (it.colour != float4::max()) {
+            section_header(fs, ".colour", sizeof(float4));
+            
+            fs.write((char*)&it.colour, sizeof(float4));
+        }
+        if (it.specular != max_float) {
+            section_header(fs, ".spec", sizeof(float));
+
+            fs.write((char*)&it.specular, sizeof(float));
+        }
     }
 
     return true;
@@ -301,13 +405,13 @@ int main(int argc, char** argv)
         }
     }
 
-
-    std::vector<mesh_part> parts;
+    std::vector<mesh_part> meshes;
+    std::vector<material_part> materials;
     for (auto& it : input) {
-        if (!GetMeshPartsForFile(it, parts)) {
+        if (!GetPartsForFile(it, meshes, materials)) {
             return 1;
         }
     }
 
-    CompileToNGE(outName, parts);
+    CompileToNGE(outName, meshes, materials);
 }

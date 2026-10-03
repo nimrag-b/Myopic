@@ -34,8 +34,14 @@ public:
 			return;
 		}
 
+		//canonise filepaths
+		for (size_t i = 0; i < _path.size(); i++) {
+			if (_path[i] == '\\') {
+				_path[i] = '/';
+			}
+		}
 		
-		if (std::find_if(_path.begin(), _path.end(), [](int ch) {return !(isalnum(ch) || ch == '_' || ch == '.'); }) != _path.end()) {
+		if (std::find_if(_path.begin(), _path.end(), [](int ch) {return !(isalnum(ch) || ch == '_' || ch == '.' || ch == '/'); }) != _path.end()) {
 			std::cout << "Invalid Path for path '" << path << "'" << std::endl;
 			SetError();
 			return;
@@ -61,11 +67,7 @@ public:
 	std::string Filepath(const std::string& subfolder, const std::string& ext = "") const {
 		std::string res = _namespace + '/' + subfolder + '/' + _path;
 
-		for (size_t i = 0; i < res.size(); i++) {
-			if (res[i] == '.') {
-				res[i] = '/';
-			}
-		}
+
 		res += ext;
 		return res;
 	}

@@ -213,7 +213,13 @@ gfx_err Graphics::Initialise() {
 	}
 
 
+	constantDataBuffer.flags = CONSTANT_DATA_FLAGS::NONE;
+	constantDataBuffer.constantLightColor = { 1.0f, 0.9f, 0.9f };
+	constantDataBuffer.constantLightDir = { 1, -1, 0 };
+	constantDataBuffer.light_count = 0;
 
+	// Prepare the constant buffer to send it to the graphics device.
+	d3dDeviceContext->UpdateSubresource(d3dConstantDataBuffer.Get(), 0, nullptr, &constantDataBuffer, 0, 0);
 
 	return gfx_err::OK;
 }
@@ -290,9 +296,7 @@ gfx_err Graphics::BeginRender()
 
 
 
-	// Prepare the constant buffer to send it to the graphics device.
 
-	d3dDeviceContext->UpdateSubresource(d3dConstantDataBuffer.Get(), 0, nullptr, &contantDataBuffer, 0, 0);
 
 	// Prepare the frame buffer to send it to the graphics device.
 
@@ -436,6 +440,9 @@ gfx_err Graphics::RenderMesh(const SubMesh* mesh) {
 
 gfx_err Graphics::RenderModel(const Model* model, ::XMFLOAT4X4& transform)
 {
+	if (model == nullptr) {
+		return gfx_err::NULL_ERROR;
+	}
 	ObjectDataBuffer odb;
 	odb.worldMatrix = transform;
 
@@ -477,6 +484,15 @@ std::unique_ptr<Shader> Graphics::LoadShader(const std::string& vertex, const st
 	ComPtr<ID3D11PixelShader> ps = DXCreatePixelShader(wpix);
 
 	return DXCreateShader(vs, ps, *layout);
+}
+
+void Graphics::UpdateSun(::XMFLOAT3 direction, ::XMFLOAT3 colour)
+{
+	constantDataBuffer.constantLightColor = colour;
+	constantDataBuffer.constantLightDir = direction;
+
+	// Prepare the constant buffer to send it to the graphics device.
+	d3dDeviceContext->UpdateSubresource(d3dConstantDataBuffer.Get(), 0, nullptr, &constantDataBuffer, 0, 0);
 }
 
 std::unique_ptr<Shader> Graphics::DXCreateShader(ComPtr<ID3D11VertexShader> vertex, ComPtr<ID3D11PixelShader> pixel, const VertexLayout& layout)

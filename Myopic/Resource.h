@@ -56,20 +56,32 @@ public:
 
 	inline unsigned long addref() {
 		auto r = _count.AddRef();
-		std::cout << _id << "++ : " << r << std::endl;
+		//std::cout << _id << "++ : " << r << std::endl;
 		return r;
 	}
 
 	inline unsigned long release() {
 		auto r = _count.RemoveRef();
-		std::cout << _id << "-- : " << r << std::endl;
+		//std::cout << _id << "-- : " << r << std::endl;
 		return r;
 	}
 
+	inline unsigned long count() {
+		return _count.Count();
+	}
+
+	void set_intrinsic(bool value) {
+		_intrinsic = value;
+	}
+
+	bool intrinsic() const {
+		return _intrinsic;
+	}
 
 private:
 	RID _id = 0;
 	ref_count _count;
+	bool _intrinsic = false; //dont ever delete this
 };
 
 
@@ -111,7 +123,7 @@ public:
 		return *this;
 	}
 
-	resource_ptr& operator=(const resource_ptr&& other) {
+	resource_ptr& operator=(const resource_ptr&& other) noexcept {
 		InternalRelease();
 		ptr = other.ptr;
 		InternalAddRef();
@@ -186,10 +198,12 @@ public:
 		return tag_map.contains(tag);
 	}
 
-	void insert(const std::string& tag, std::unique_ptr<T> res) {
+	resource_ptr<T> insert(const std::string& tag, std::unique_ptr<T> res) {
+
 		RID rid = res->id();
 		tag_map.insert_or_assign(tag, rid);
-		map.insert_or_assign(rid, std::move(res));
+		auto v = map.insert_or_assign(rid, std::move(res));
+		return v.first->second.get();
 	}
 
 	RID get_rid(const std::string& tag) {
@@ -213,6 +227,27 @@ public:
 
 	resource_ptr<T> get_err() {
 		return get(err_path);
+	}
+
+
+
+	void remove_unreferenced() {
+
+		std::vector<std::string> toRemove;
+
+		for (auto& it : tag_map) {
+			auto& ptr = map.at(it.second);
+			if (ptr->intrinsic()) continue;
+			if (ptr->count() == 0) {
+				toRemove.push_back(it.first);
+			}
+		}
+
+		for (auto& it : toRemove) {
+			map.erase(tag_map[it]);
+			tag_map.erase(it);
+			std::cout << "Unloaded " << it << std::endl;
+		}
 	}
 
 private:

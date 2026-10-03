@@ -2,6 +2,7 @@
 #include <fstream>
 #include <exception>
 #include <array>
+#include <chrono>
 
 //custom exception to be thrown if unrecoverable mistake
 //if possible, return a default error asset, only throw this if no other choice
@@ -50,11 +51,12 @@ void Assets::CreateShader(const std::string& tag, const ResourceLocation& vertex
 
 void Assets::LoadTexture(const ResourceLocation& tag) {
 
-	std::string path = tag.Filepath("textures", ".png");
+	std::string path = tag.Filepath("textures");
 
 	SDL_Surface* surfraw = SDL_LoadSurface(path.c_str());
 
 	if (surfraw == nullptr) {
+		std::cout << "Could not find texture file at " << path << std::endl;
 		return;
 	}
 
@@ -182,19 +184,24 @@ struct mesh_part {
 	std::vector<uint32_t> indices;
 };
 
-bool Assets::LoadModel(const ResourceLocation& tag)
+
+
+std::unique_ptr<Model> Assets::LoadModel(const ResourceLocation& tag)
 {
+	auto startClock = std::chrono::high_resolution_clock::now();
+
 	std::string path = tag.Filepath("meshes", ".nge");
 	std::ifstream fs(path, std::ios::binary);
 	if (!fs.is_open()) {
-		return false;
+		std::cout << "Failed to open file " << path << std::endl;
+		return nullptr;
 	}
 
 	char magic[4] = { 0 };
 
 	fs.read(magic, 4);
 	if (memcmp(magic, "NGE", 4) != 0) {
-		return false;
+		return nullptr;
 	}
 
 	uint32_t version;
@@ -205,12 +212,16 @@ bool Assets::LoadModel(const ResourceLocation& tag)
 
 	//for now we are on version one and the only format we support is GVERTEX so just exit if either is wrong
 	if (version != 1 || format != 1) {
-		return false;
+		return nullptr;
 	}
 
 	//amount of submeshes contained in this file
 	uint32_t numMeshes;
 	fs.read((char*)&numMeshes, sizeof(uint32_t));
+
+	//amount of materials contained in this file
+	uint32_t numMaterials;
+	fs.read((char*)&numMaterials, sizeof(uint32_t));
 
 	//unused space to be used later
 	uint32_t padding[4] = { 0 };
@@ -225,6 +236,10 @@ bool Assets::LoadModel(const ResourceLocation& tag)
 
 	mesh_part* current = nullptr;
 
+	std::vector<MaterialDef> mat_parts;
+
+	MaterialDef* current_mat = nullptr;
+
 	while (1) {
 		fs >> next;
 
@@ -232,7 +247,8 @@ bool Assets::LoadModel(const ResourceLocation& tag)
 
 		//all section headers must start with .
 		if (next != '.') {
-			return false;
+			std::cout << "Mesh file invalid for " << path << std::endl;
+			return nullptr;
 		}
 
 		//read section header
@@ -244,7 +260,7 @@ bool Assets::LoadModel(const ResourceLocation& tag)
 		*ptr = 0;
 		header = buffer;
 
-		std::cout << header << std::endl;
+		//std::cout << header << std::endl;
 
 		//new mesh
 		if (header == ".mesh") {
@@ -262,7 +278,8 @@ bool Assets::LoadModel(const ResourceLocation& tag)
 
 		//other than setting a new mesh, there should never be no set mesh
 		if (current == nullptr) {
-			return false;
+			std::cout << "Mesh file invalid for " << path << std::endl;
+			return nullptr;
 		}
 
 		//read vertex data
@@ -285,9 +302,62 @@ bool Assets::LoadModel(const ResourceLocation& tag)
 			continue;
 		}
 
+		//material output
+		if (header == ".mat") {
+			current_mat = &mat_parts.emplace_back();
+			continue;
+		}
+
+		if (current_mat == nullptr) {
+			std::cout << "Mesh file invalid for " << path << std::endl;
+			return nullptr;
+		}
+
+		if (header == ".diffuse") {
+			uint32_t size; //size in bytes
+			fs.read((char*)&size, sizeof(uint32_t));
+			char* str = new char[size+1];
+
+			fs.read(str, size);
+			str[size] = 0;
+
+			current_mat->texture = str;
+
+			delete[] str;
+			continue;
+		}
+		if (header == ".normal") {
+			uint32_t size; //size in bytes
+			fs.read((char*)&size, sizeof(uint32_t));
+			char* str = new char[size + 1];
+
+			fs.read(str, size);
+			str[size] = 0;
+
+			current_mat->normal = str;
+
+			delete[] str;
+			continue;
+		}
+		if (header == ".colour") {
+			uint32_t size; //size in bytes
+			fs.read((char*)&size, sizeof(uint32_t));
+			fs.read((char*)&current_mat->colour, sizeof(current_mat->colour));
+
+			continue;
+		}
+		if (header == ".spec") {
+			uint32_t size; //size in bytes
+			fs.read((char*)&size, sizeof(uint32_t));
+			fs.read((char*)&current_mat->specular, sizeof(current_mat->specular));
+
+			continue;
+		}
+
 	}
 	//make sure we have loaded the correct number of meshes
 	assert(parts.size() == numMeshes);
+	assert(mat_parts.size() == numMaterials);
 
 	std::unique_ptr<Mesh> mesh = std::make_unique<Mesh>(numMeshes);
 
@@ -302,15 +372,33 @@ bool Assets::LoadModel(const ResourceLocation& tag)
 		}
 	}
 	else {
-		return false;
+		std::cout << "Unknown Mesh format for " << path << std::endl;
+		return nullptr;
 	}
 
-	meshes.insert(tag.ToString(), std::move(mesh));
 
-	return true;
+
+	std::vector<resource_ptr<Material>> mats;
+
+	std::string resloc = tag.ToString();
+
+	for (size_t i = 0; i < numMaterials; i++)
+	{
+		mats.push_back(CreateMaterial(resloc + "_mat" + std::to_string(i), mat_parts[i]));
+	}
+
+	auto mesh_res = meshes.insert(resloc, std::move(mesh));
+
+	auto endClock = std::chrono::high_resolution_clock::now();
+
+	std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(endClock - startClock);
+
+	std::cout << "Loaded " << path << " in " << ms << std::endl;
+
+	return std::make_unique<Model>(mesh_res,mats);
 }
 
-void Assets::CreateMaterial(const ResourceLocation& name, const MaterialDef& def)
+resource_ptr<Material> Assets::CreateMaterial(const ResourceLocation& name, const MaterialDef& def)
 {
 	if (materials.contains(name.ToString())) {
 		throw load_error("Cannot create material '" + name.ToString() + "' as a material with the same name already exists");
@@ -318,14 +406,14 @@ void Assets::CreateMaterial(const ResourceLocation& name, const MaterialDef& def
 
 	resource_ptr<Texture> tex;
 	if (def.texture.empty()) {
-		tex = Get<Texture>("myopic:error.texture");
+		tex = Get<Texture>("myopic:default/texture");
 	}
 	else {
 		tex = GetOrCreateTexture(def.texture);
 	}
 	resource_ptr<Texture> normal;
 	if (def.normal.empty()) {
-		normal = Get<Texture>("myopic:error.normal");
+		normal = Get<Texture>("myopic:default/normal");
 	}
 	else {
 		normal = GetOrCreateTexture(def.normal);
@@ -333,7 +421,16 @@ void Assets::CreateMaterial(const ResourceLocation& name, const MaterialDef& def
 
 	resource_ptr<Shader> shader = Get<Shader>(def.shader.ToString());
 
-	materials.insert( name.ToString(), std::make_unique<Material>(def.colour, def.specular, def.fresnelRange, shader.get(), tex.get(), normal.get()));
+	return materials.insert( name.ToString(), std::make_unique<Material>(def.colour, def.specular, def.fresnelRange, shader.get(), tex.get(), normal.get()));
+}
+
+void Assets::RemoveUnreferenced()
+{
+	materials.remove_unreferenced();
+	meshes.remove_unreferenced();
+	textures.remove_unreferenced();
+	shaders.remove_unreferenced();
+
 }
 
 
@@ -347,20 +444,29 @@ std::vector<uint8_t> generate_missing_tex() {
 
 	std::vector<uint8_t> arr( missing_tex_bytes );
 
-	for (size_t i = 0; i < missing_tex_bytes; i += 4)
+	for (size_t j = 0; j < missing_tex_width * 4; j += 4)
 	{
-		if ((i / missing_tex_block_size) % 2) {
-			arr[i + 0] = 0;
-			arr[i + 1] = 0;
-			arr[i + 2] = 0;
-			arr[i + 3] = 255;
+		for (size_t i = 0; i < missing_tex_width * 4; i += 4)
+		{
+			size_t index = (i + (j * missing_tex_width));
+
+			bool x = (i / missing_tex_block_size) % 2;
+			bool y = (j / missing_tex_block_size) % 2;
+
+			if (x ? y : !y) {
+				arr[index + 0] = 0;
+				arr[index + 1] = 0;
+				arr[index + 2] = 0;
+				arr[index + 3] = 255;
+			}
+			else {
+				arr[index + 0] = 255;
+				arr[index + 1] = 0;
+				arr[index + 2] = 255;
+				arr[index + 3] = 255;
+			}
 		}
-		else {
-			arr[i + 0] = 255;
-			arr[i + 1] = 0;
-			arr[i + 2] = 255;
-			arr[i + 3] = 255;
-		}
+
 	}
 
 	return arr;
@@ -370,6 +476,32 @@ std::vector<uint8_t> generate_missing_tex() {
 
 void Assets::CreateDefaults()
 {
+
+	VertexLayout UIlayout{
+		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(GUIVertex, position), D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(GUIVertex, texCoord), D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0},
+	};
+
+
+	std::vector<GUIVertex> GUIvertices = {
+	{ POSITION{ -1.0f,  1.0f, 0.0f }, TEXCOORD{ 0, 1 } },
+	{ POSITION{  1.0f, -1.0f, 0.0f }, TEXCOORD{ 1, 0 } },
+	{ POSITION{ -1.0f, -1.0f, 0.0f }, TEXCOORD{ 0, 0 } },
+	{ POSITION{  1.0f,  1.0f, 0.0f }, TEXCOORD{ 1, 1 } },
+	};
+	std::vector<uint32_t> GUIindices = {
+		0, 1, 2,   // first triangle
+		0, 3, 1
+	};
+
+	//shaders
+	Register("myopic:gui", gfx.LoadShader("shaders/GUI.vs.cso", "shaders/GUI.ps.cso", &UIlayout)).get()->set_intrinsic(true);
+
+	Register("myopic:standard_lit", gfx.LoadShader("shaders/Main.vs.cso", "shaders/Main.ps.cso", nullptr)).get()->set_intrinsic(true);
+
+
+
+	//textures
 	auto missing_tex_raw = generate_missing_tex();
 	auto missing_tex = gfx.DXCreateTexture((void*)missing_tex_raw.data(), missing_tex_width, missing_tex_width, missing_tex_width * 4, DXGI_FORMAT_B8G8R8A8_UNORM);
 
@@ -379,10 +511,20 @@ void Assets::CreateDefaults()
 
 	auto missing_normal = gfx.DXCreateTexture((void*)normalData, 1, 1, 4, DXGI_FORMAT_B8G8R8A8_UNORM);
 
-	Register("myopic:error.texture", std::move(missing_tex));
-	Register("myopic:error.normal", std::move(missing_normal));
 
-	textures.set_err_path("myopic:error.texture");
+	const uint8_t blankData[4]{ //1x1 normal map pointing out
+	255,255,255,255
+	};
+
+	auto blank_texture = gfx.DXCreateTexture((void*)blankData, 1, 1, 4, DXGI_FORMAT_B8G8R8A8_UNORM);
+
+
+	//this feels a bit hacky but hey, it works
+	Register("myopic:error/texture", std::move(missing_tex)).get()->set_intrinsic(true);
+	Register("myopic:default/normal", std::move(missing_normal)).get()->set_intrinsic(true);
+	Register("myopic:default/texture", std::move(blank_texture)).get()->set_intrinsic(true);
+
+	textures.set_err_path("myopic:error/texture");
 
 
 }

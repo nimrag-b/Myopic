@@ -56,8 +56,8 @@ float Fresnel(float3 normal, float3 viewDir)
 
 float3 CalculateConstantLight(float intensity, float3 normal, float3 viewDir)
 {
-    float3 lightColor = float3(1.0f, 0.9f, 0.9f) * intensity;
-    float3 lightDir = normalize(float3(7, -7, 10));
+    float3 lightColor = constantLightColor * intensity; //float3(1.0f, 0.9f, 0.9f) * intensity;
+    float3 lightDir = normalize(constantLightDir); //normalize(float3(1, -1, 0));
     
         //return float4(normal, 1);
     
@@ -74,36 +74,31 @@ float3 CalculateConstantLight(float intensity, float3 normal, float3 viewDir)
     float3 diffuse = saturate(lightIntensity * lightColor);
     
     //specular
-    float specularStrength = specular;
 
     float3 reflectDir = reflect(-lightDir, normal);
     
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    float3 specular = specularStrength * spec * lightColor;
-    
+    float specularFactor = specular;
+
+    float spec;
+    if (specularFactor > 1)
+    {
+        spec = pow(max(dot(viewDir, reflectDir), 0.0), specularFactor) * lightColor;
+    }
+    else
+    {
+        spec = 0;
+    }
+
     
     //float shadow = CalculateShadowFactor(light_view_projection);
     
     
-    return ambient + ((diffuse + specular)/* * shadow */);
+    return ambient + ((diffuse + spec) /* * shadow */);
 
 }
 
 
 
-struct Attenuation
-{
-    float constant;
-    float linear_;
-    float quadratic;
-};
-
-struct Light
-{
-    float3 position;
-    float3 colour;
-    Attenuation attenuation;
-};
 
 float3 CalculatePointLight(Light light, float3 position, float3 normal, float3 viewDir)
 {
@@ -132,14 +127,22 @@ float3 CalculatePointLight(Light light, float3 position, float3 normal, float3 v
     float3 diffuse = saturate(lightIntensity * lightColor) * attenuate;
     
     //specular
-    float specularStrength = specular;
 
     float3 reflectDir = reflect(-lightDir, normal);
     
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    float3 specular = specularStrength * spec * lightColor * attenuate;
-    
-    return ambient + diffuse + specular;
+    float specularFactor = specular;
+
+    float spec;
+    if (specularFactor > 1)
+    {
+        spec = pow(max(dot(viewDir, reflectDir), 0.0), specularFactor) * lightColor * attenuate;
+    }
+    else
+    {
+        spec = 0;
+    }
+
+    return ambient + diffuse + spec;
 }
 
 
@@ -168,6 +171,17 @@ float4 main(PixelShaderInput input) : SV_Target
     //calculate result
     float fresnel = Fresnel(normal, viewDir);
     float3 constantLight = CalculateConstantLight(1, normal, viewDir);
+    
+ #ifdef CEL_SHADER
+    if (length(constantLight) < 0.5)
+    {
+        return float4(0.7, 0.7, 0.7, 1) * baseColor;
+    }
+    else
+    {
+        return float4(1, 1, 1, 1) * baseColor;
+    }
+#endif
     //Attenuation att;
     //att.constant = 0.1;
     //att.linear_ = 0.022;
@@ -182,11 +196,14 @@ float4 main(PixelShaderInput input) : SV_Target
     //l2.attenuation = att;
     //l2.colour = float3(0.1f, 1.0f, 0.1f);
     //l2.position = float3(-5, 0, 5);
+    float3 lightVals = constantLight;
     
-    //float3 light1 = CalculatePointLight(l1, input.world.xyz, normal, viewDir);
-    //float3 light2 = CalculatePointLight(l2, input.world.xyz, normal, viewDir);
+    for (int i = 0; i < light_count; i++)
+    {
+        lightVals += CalculatePointLight(lights[i], input.world.xyz, normal, viewDir);
+    }
     
-    float3 result = (constantLight + fresnel) * color.xyz;
+    float3 result = (((lightVals) / (light_count + 1)) * color.xyz) + fresnel;
 
     return float4(result, 1.0f) * baseColor;
 }

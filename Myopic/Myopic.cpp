@@ -11,66 +11,7 @@
 
 #include "Model.h"
 
-
-struct VertexPositionColor
-{
-	POSITION position;
-	COLOUR color;
-};
-
-struct GUIVertex {
-	POSITION position;
-	TEXCOORD texCoord;
-};
-
-VertexLayout basiclayout{
-{
-	"POSITION",
-	0,
-	DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT,
-	0,
-	offsetof(VertexPositionColor, position),
-	D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA,
-	0
-},
-{
-	"COLOR",
-	0,
-	DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT,
-	0,
-	offsetof(VertexPositionColor, color),
-	D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA,
-	0
-},
-};
-
-
-
-std::vector<VertexPositionColor> vertices = {
-{ POSITION{  0.0f,  0.5f, 0.0f }, COLOUR{ 1, 0, 0 } },
-{ POSITION{  0.5f, -0.5f, 0.0f }, COLOUR{ 0, 1, 0 } },
-{ POSITION{ -0.5f, -0.5f, 0.0f }, COLOUR{ 0, 0, 1 } },
-};
-std::vector<uint32_t> indices = {
-	0, 1, 2,   // first triangle
-};
-
-VertexLayout UIlayout{
-	{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(GUIVertex, position), D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0},
-	{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(GUIVertex, texCoord), D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0},
-};
-
-
-std::vector<GUIVertex> GUIvertices = {
-{ POSITION{ -1.0f,  1.0f, 0.0f }, TEXCOORD{ 0, 1 } },
-{ POSITION{  1.0f, -1.0f, 0.0f }, TEXCOORD{ 1, 0 } },
-{ POSITION{ -1.0f, -1.0f, 0.0f }, TEXCOORD{ 0, 0 } },
-{ POSITION{  1.0f,  1.0f, 0.0f }, TEXCOORD{ 1, 1 } },
-};
-std::vector<uint32_t> GUIindices = {
-	0, 1, 2,   // first triangle
-	0, 3, 1
-};
+#include <thread>
 
 int avg_fps_v = 0;
 
@@ -78,6 +19,12 @@ int avg_fps() {
 	return avg_fps_v;
 }
 
+std::unique_ptr<Model> mod;
+void load(Assets& assets) {
+	assets.LoadModel("paimon");
+	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	mod = assets.LoadModel("2B_Rip_v1_6_R");
+}
 
 int myopic() {
 
@@ -85,106 +32,13 @@ int myopic() {
 	gfx.Initialise();
 	Assets assets(gfx);
 
-	assets.Register("gui", gfx.LoadShader("shaders/GUI.vs.cso", "shaders/GUI.ps.cso", &UIlayout));
-
-	assets.Register("basic", gfx.LoadShader("shaders/Basic.vs.cso", "shaders/Basic.ps.cso", &basiclayout));
-	assets.Register("myopic:standard_lit", gfx.LoadShader("shaders/Main.vs.cso", "shaders/Main.ps.cso", nullptr));
+	std::thread load_thread(load, std::ref(assets));
 
 
-	assets.LoadModel("2B_Rip_v1_6_R");
-
-	assets.CreateMaterial("2BRip_Boots", MaterialDef{
-		.shader = "standard_lit",
-		.texture = "asdf2b0_tex06"
-		});
-	assets.CreateMaterial("2BRip_Cloth", MaterialDef{
-	.shader = "standard_lit",
-	.texture = "asdf2b0_tex06"
-		});
-	assets.CreateMaterial("2BRip_Eye", MaterialDef{
-.shader = "standard_lit",
-.texture = "asdf2b0_tex04"
-		});
-	assets.CreateMaterial("2BRip_Eyelash", MaterialDef{
-.shader = "standard_lit",
-.texture = "asdf2b0_tex09"
-		});
-	assets.CreateMaterial("2BRip_EyeShadow", MaterialDef{
-.shader = "standard_lit",
-.texture = "asdf2b0_tex04"
-		});
-	assets.CreateMaterial("2BRip_Hair1", MaterialDef{
-.shader = "standard_lit",
-.texture = "asdf2b0_tex09",
-.normal = "asdf2b0_tex10"
-		});
-	assets.CreateMaterial("2BRip_Hair2", MaterialDef{
-.shader = "standard_lit",
-		});
-	assets.CreateMaterial("2BRip_Satin", MaterialDef{
-.shader = "standard_lit",
-.texture = "asdf2b0_tex09"
-		});
-	assets.CreateMaterial("2BRip_Skin", MaterialDef{
-.shader = "standard_lit",
-.texture = "asdf2b0_tex04"
-		});
-	assets.CreateMaterial("2BRip_Tights", MaterialDef{
-.shader = "standard_lit",
-.texture = "asdf2b0_tex00"
-		});
+	
 
 
-	//auto rawmesh = gfx.CreateMesh(vertices);
-	//gfx.SetSubMesh(rawmesh, 0, indices);
-	//assets.Register("Quad", std::move(rawmesh));
-
-	//auto guiraw = gfx.CreateMesh(GUIvertices);
-	//gfx.SetSubMesh(guiraw, 0, GUIindices);
-	//assets.Register("GUIQuad", std::move(guiraw));
-
-
-	//assets.CreateMaterial("myopic:heavymat", MaterialDef{
-	//	.shader = "standard_lit",
-	//	.texture = "hvyweapon_red",
-	//	.normal = "hvyweapon_normal",
-	//	.specular = 0.05f
-	//	});
-
-	//assets.CreateMaterial("myopic:heavyhead", MaterialDef{
-	//	.shader = "standard_lit",
-	//	.texture = "heavy_head",
-	//	.specular = 0.05f
-	//	});
-
-	//assets.LoadMesh("myopic:heavy");
-
-	//assets.LoadTexture("myopic:heavy_head");
-	//assets.LoadTexture("myopic:hvyweapon_normal");
-	//assets.LoadTexture("myopic:hvyweapon_red");
-
-
-	//auto heavy = assets.Get<Mesh>("myopic:heavy");
-
-	//auto heavy_mat = assets.Get<Material>("myopic:heavymat");
-	//auto heavy_head = assets.Get<Material>("myopic:heavyhead");
-
-	//Model heavy_mod( heavy, std::vector<resource_ptr<Material>>{heavy_mat, heavy_head, heavy_mat, heavy_head, heavy_mat} );
-
-	auto mesh = assets.Get<Mesh>("myopic:2B_Rip_v1_6_R");
-
-	Model mod_2b(mesh, std::vector<resource_ptr<Material>>{
-			assets.Get<Material>("myopic:2BRip_Cloth"),
-			assets.Get<Material>("myopic:2BRip_Satin"),
-			assets.Get<Material>("myopic:2BRip_Tights"),
-			assets.Get<Material>("myopic:2BRip_Hair1"),
-			assets.Get<Material>("myopic:2BRip_Hair2"),
-			assets.Get<Material>("myopic:2BRip_Eyelash"),
-			assets.Get<Material>("myopic:2BRip_Skin"),
-			assets.Get<Material>("myopic:2BRip_EyeShadow"),
-			assets.Get<Material>("myopic:2BRip_Boots"),
-			assets.Get<Material>("myopic:2BRip_Eye"),
-	});
+	assets.RemoveUnreferenced();
 
 	float heavy_rot = 0;
 
@@ -264,6 +118,12 @@ int myopic() {
 		}
 
 		//gfx.GetCamera().Rotate(1.0f * (float)delta, 0);
+		XMFLOAT3 day = { 1.0f, 0.9f, 0.9f };
+		XMFLOAT3 night = { 49/255.0f, 49/255.0f, 163/255.0f };
+		XMFLOAT3 res;
+		XMStoreFloat3(&res,XMVectorLerp(XMLoadFloat3(&day), XMLoadFloat3(&night), abs(sin(heavy_rot/10.0f))));
+
+		gfx.UpdateSun({ 0,1,1 }, res);
 
 		gfx.BeginRender();
 
@@ -278,7 +138,7 @@ int myopic() {
 			XMMatrixTranspose(xmm)
 		);
 
-		gfx.RenderModel(&mod_2b, transform);
+		gfx.RenderModel(mod.get(), transform);
 
 		//gfx.EnableAlphaBlend();
 
@@ -295,6 +155,8 @@ int myopic() {
 
 
 	gfx.Destroy();
+
+	load_thread.join();
 
 	return 0;
 }

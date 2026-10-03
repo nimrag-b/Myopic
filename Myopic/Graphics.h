@@ -49,6 +49,7 @@ public:
 
 	std::unique_ptr<Shader> LoadShader(const std::string& vertex, const std::string& fragment, VertexLayout* layout);
 
+	void UpdateSun(::XMFLOAT3 direction, ::XMFLOAT3 colour);
 
 	void EnableAlphaBlend();
 	void DisableAlphaBlend();
@@ -116,7 +117,7 @@ private:
 	VertexLayout d3dGvertexLayout{ GVertexLayout };
 	const VertexLayout* currentVertexLayout = nullptr;
 	D3D11_VIEWPORT d3dViewport{ 0,0,0,0 };
-	ConstantDataBuffer contantDataBuffer;
+	ConstantDataBuffer constantDataBuffer;
 	Camera camera;
 	XMMATRIX projection;
 

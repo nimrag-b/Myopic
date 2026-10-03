@@ -26,13 +26,34 @@ enum class gfx_err {
 };
 
 enum class CONSTANT_DATA_FLAGS {
+	NONE = 0,
     TEXTURE_DISABLE = 1,
 };
 
+struct Attenuation
+{
+	float constant;
+	float linear_;
+	float quadratic;
+};
+
+struct alignas(16) Light //needs to be aligned to a 16 byte boundary for array access
+{
+	DirectX::XMFLOAT3 position;
+	DirectX::XMFLOAT3 colour;
+	Attenuation attenuation;
+	//DirectX::XMFLOAT3 padding;
+};
+
+
+#define MAX_LIGHTS 16
 //for data that rarely changes
 struct alignas(16)  ConstantDataBuffer {
     CONSTANT_DATA_FLAGS flags;
-    DirectX::XMFLOAT3 lightDirection;
+	DirectX::XMFLOAT3 constantLightDir;
+	DirectX::XMFLOAT3 constantLightColor;
+	Light lights[MAX_LIGHTS];
+	int light_count;
 };
 
 //changed on every frame
@@ -137,9 +158,12 @@ struct GVertex
 	NORMAL normal;
 	TEXCOORD textureCoordinate;
 	TANGENT tangent;
-	//BINORMAL binormal;
 };
 
+struct GUIVertex {
+	POSITION position;
+	TEXCOORD texCoord;
+};
 
 
 static D3D11_INPUT_ELEMENT_DESC GVertexLayout[] =

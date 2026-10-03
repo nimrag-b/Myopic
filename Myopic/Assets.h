@@ -13,18 +13,20 @@ public:
 
 	void CreateShader(const std::string& tag, const ResourceLocation& vertex, const ResourceLocation& fragment, VertexLayout* layout);
 	//void LoadMesh(const ResourceLocation& tag);
-	bool LoadModel(const ResourceLocation& tag);
+	std::unique_ptr<Model> LoadModel(const ResourceLocation& tag);
 
 	void LoadTexture(const ResourceLocation& tag);
 
 	resource_ptr<Mesh> GetOrCreateMesh(const ResourceLocation& tag);
 	resource_ptr<Texture> GetOrCreateTexture(const ResourceLocation& tag);
 
-	void CreateMaterial(const ResourceLocation& name, const MaterialDef& def);
+	resource_ptr<Material> CreateMaterial(const ResourceLocation& name, const MaterialDef& def);
+
+	void RemoveUnreferenced();
 
 	template<typename T>
-	void Register(const std::string& tag, std::unique_ptr<T> res) {
-		GetRegistry<T>().insert(tag, std::move(res));
+	resource_ptr<T> Register(const std::string& tag, std::unique_ptr<T> res) {
+		return GetRegistry<T>().insert(tag, std::move(res));
 	}
 
 	template<typename T>

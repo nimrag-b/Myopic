@@ -9,7 +9,7 @@
 
 //a struct that defines the properties of a material
 struct MaterialDef {
-	ResourceLocation shader;
+	ResourceLocation shader = "standard_lit";
 	ResourceLocation texture = nullptr;
 	ResourceLocation normal = nullptr;
 

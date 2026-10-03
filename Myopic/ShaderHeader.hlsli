@@ -1,6 +1,27 @@
+
+
+struct Attenuation
+{
+    float constant;
+    float linear_;
+    float quadratic;
+};
+
+struct Light
+{
+    float3 position;
+    float3 colour;
+    Attenuation attenuation;
+};
+
+#define MAX_LIGHTS 16
 cbuffer ConstantDataBuffer : register(b0)
 {
     int flags;
+    float3 constantLightDir;
+    float3 constantLightColor;
+    Light lights[MAX_LIGHTS];
+    int light_count;
 
 };
 cbuffer FrameDataBuffer : register(b1)
