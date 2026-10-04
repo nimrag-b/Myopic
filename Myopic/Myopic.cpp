@@ -21,26 +21,27 @@ int avg_fps() {
 
 std::unique_ptr<Model> mod;
 void load(Assets& assets) {
+
+
 	assets.LoadModel("paimon");
-	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	//std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	mod = assets.LoadModel("2B_Rip_v1_6_R");
 }
 
-int myopic() {
+bool keys[SDL_SCANCODE_COUNT];
 
-	Graphics gfx;
-	gfx.Initialise();
-	Assets assets(gfx);
+int game(Graphics& gfx, Assets& assets) {
 
-	std::thread load_thread(load, std::ref(assets));
+	assets.LoadCubemap("SkyboxBasic");
 
-
-	
-
+	auto texCube = assets.GetOrCreateTexture("SkyboxBasic");
 
 	assets.RemoveUnreferenced();
 
 	float heavy_rot = 0;
+
+
+
 
 	Uint64 LAST = SDL_GetTicksNS();
 	double delta = 0;
@@ -107,25 +108,98 @@ int myopic() {
 			case SDL_EVENT_WINDOW_RESIZED:
 				gfx.OnResize();
 				break;
+			case SDL_EVENT_KEY_UP:
+				keys[e.key.scancode] = false;
+				break;
 			case SDL_EVENT_KEY_DOWN:
+
+				keys[e.key.scancode] = true;
+
 				if (e.key.key == SDLK_F) {
 					gfx.SetFullscreen(!gfx.GetFullscreen());
 				}
+				else if (e.key.key == SDLK_V) {
+					gfx.SetVsync(!gfx.Vsync());
+				}
+				else if (e.key.key == SDLK_LEFTBRACKET) {
+					SDL_SetWindowRelativeMouseMode(gfx.SdlWindow(), true);
+				}
+				else if (e.key.key == SDLK_RIGHTBRACKET) {
+					SDL_SetWindowRelativeMouseMode(gfx.SdlWindow(), false);
+				}
+
+				break;
+			case SDL_EVENT_MOUSE_MOTION:
+				gfx.GetCamera().Rotate(e.motion.xrel * 0.002f, -e.motion.yrel * 0.002f);
+				
 				break;
 			default:
 				break;
 			}
 		}
 
-		//gfx.GetCamera().Rotate(1.0f * (float)delta, 0);
-		XMFLOAT3 day = { 1.0f, 0.9f, 0.9f };
-		XMFLOAT3 night = { 49/255.0f, 49/255.0f, 163/255.0f };
-		XMFLOAT3 res;
-		XMStoreFloat3(&res,XMVectorLerp(XMLoadFloat3(&day), XMLoadFloat3(&night), abs(sin(heavy_rot/10.0f))));
 
-		gfx.UpdateSun({ 0,1,1 }, res);
+		if (keys[SDL_SCANCODE_W]) {
+
+			Camera& cam = gfx.GetCamera();
+
+			XMFLOAT3 forward = cam.Forward();
+			XMVECTOR vec = 50 * delta * XMLoadFloat3(&forward);
+			XMStoreFloat3(&forward, vec);
+			cam.Move(forward);
+			//std::cout << cam.Position().x << ", " << cam.Position().y << ", " << cam.Position().z << std::endl;
+		}
+		if (keys[SDL_SCANCODE_S]) {
+			Camera& cam = gfx.GetCamera();
+
+			XMFLOAT3 forward = cam.Forward();
+			XMVECTOR vec = 50 * -delta * XMLoadFloat3(&forward);
+			XMStoreFloat3(&forward, vec);
+			cam.Move(forward);
+			//std::cout << cam.Position().x << ", " << cam.Position().y << ", " << cam.Position().z << std::endl;
+		}
+
+		if (keys[SDL_SCANCODE_A]) {
+			Camera& cam = gfx.GetCamera();
+
+			XMFLOAT3 right = cam.Right();
+			XMVECTOR vec = 50 * -delta * XMLoadFloat3(&right);
+			XMStoreFloat3(&right, vec);
+			cam.Move(right);
+			//std::cout << cam.Position().x << ", " << cam.Position().y << ", " << cam.Position().z << std::endl;
+		}
+		if (keys[SDL_SCANCODE_D]) {
+			Camera& cam = gfx.GetCamera();
+
+			XMFLOAT3 right = cam.Right();
+			XMVECTOR vec = 50 * delta * XMLoadFloat3(&right);
+			XMStoreFloat3(&right, vec);
+			cam.Move(right);
+			//std::cout << cam.Position().x << ", " << cam.Position().y << ", " << cam.Position().z << std::endl;
+		}
+
+
+		//gfx.GetCamera().Rotate(1.0f * (float)delta, 0);
+
+		XMFLOAT3 sunPos = { 1,0,0 };
+		XMFLOAT3 axis = { 0,0,1 };
+		XMStoreFloat3(&sunPos, XMVector3Rotate(XMLoadFloat3(&sunPos), XMQuaternionRotationAxis(XMLoadFloat3(&axis), heavy_rot)));
+		//std::cout << sunPos.x << ", " << sunPos.y << ", " << sunPos.z << std::endl;
+		//std::cout << sunPos.x << std::endl;
+
+
+		XMFLOAT3 day = { 1.0f, 0.9f, 0.9f };
+		XMFLOAT3 night = { 49 / 255.0f, 49 / 255.0f, 163 / 255.0f };
+		XMFLOAT3 res;
+		XMStoreFloat3(&res, XMVectorLerp(XMLoadFloat3(&day), XMLoadFloat3(&night), (sunPos.x + 1)/2.0f));
+
+		gfx.UpdateSun(sunPos, res);
 
 		gfx.BeginRender();
+
+
+		gfx.RenderSkybox(texCube.get());
+
 
 		heavy_rot += (float)delta;
 
@@ -153,6 +227,20 @@ int myopic() {
 		gfx.EndRender();
 	}
 
+	return 0;
+}
+
+int myopic() {
+
+	Graphics gfx;
+	gfx.Initialise();
+	Assets assets(gfx);
+
+	std::thread load_thread(load, std::ref(assets));
+
+	game(gfx, assets);
+
+	mod.reset();
 
 	gfx.Destroy();
 

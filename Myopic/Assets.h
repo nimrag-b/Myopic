@@ -11,11 +11,19 @@ public:
 		CreateDefaults();
 	}
 
+	~Assets() {
+		//must be done in the right order to avoid dangling pointers (ie materials reference both textures and shaders so much be cleared first);
+		materials.clear();
+		textures.clear();
+		shaders.clear();
+	}
+
 	void CreateShader(const std::string& tag, const ResourceLocation& vertex, const ResourceLocation& fragment, VertexLayout* layout);
 	//void LoadMesh(const ResourceLocation& tag);
 	std::unique_ptr<Model> LoadModel(const ResourceLocation& tag);
 
 	void LoadTexture(const ResourceLocation& tag);
+	void LoadCubemap(const ResourceLocation& tag);
 
 	resource_ptr<Mesh> GetOrCreateMesh(const ResourceLocation& tag);
 	resource_ptr<Texture> GetOrCreateTexture(const ResourceLocation& tag);

@@ -153,6 +153,7 @@
     <ClCompile Include="Assets.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Allocators.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="GameError.h" />
     <ClInclude Include="Graphics.h" />
@@ -171,6 +172,7 @@
     <CopyFileToFolders Include="heavy.naf">
       <FileType>Document</FileType>
     </CopyFileToFolders>
+    <None Include="InputBuffers.hlsli" />
     <None Include="ShaderHeader.hlsli" />
   </ItemGroup>
   <ItemGroup>
@@ -191,6 +193,18 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
       <DeploymentContent>true</DeploymentContent>
+    </FxCompile>
+    <FxCompile Include="Cubemap.ps.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Cubemap.vs.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="GUI.ps.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>

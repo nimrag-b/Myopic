@@ -24,6 +24,7 @@ constexpr uint32_t defaultWindowHeight = 600;
 
 
 
+
 gfx_err Graphics::Initialise() {
 	//init window with SDL
 	sdlWindow = SDL_CreateWindow("sdlwindow", defaultWindowWidth, defaultWindowHeight, SDL_WINDOW_RESIZABLE);
@@ -221,6 +222,28 @@ gfx_err Graphics::Initialise() {
 	// Prepare the constant buffer to send it to the graphics device.
 	d3dDeviceContext->UpdateSubresource(d3dConstantDataBuffer.Get(), 0, nullptr, &constantDataBuffer, 0, 0);
 
+
+	CD3D11_DEPTH_STENCIL_DESC desc{ CD3D11_DEFAULT() };
+	desc.DepthEnable = false;
+	desc.StencilEnable = false;
+
+	err::ThrowOnFail(
+		d3dDevice->CreateDepthStencilState(&desc, d3dDisableDepthStencilState.ReleaseAndGetAddressOf())
+	);
+
+
+	//ComPtr<ID3D11RasterizerState> rsState;
+	//CD3D11_RASTERIZER_DESC rsDesc{ CD3D11_DEFAULT() };
+	//rsDesc.CullMode = D3D11_CULL_NONE;
+
+	//d3dDevice->CreateRasterizerState(&rsDesc, &rsState);
+	//d3dDeviceContext->RSSetState(rsState.Get());
+
+	//finally, init any internal gamestate managed by the renderer
+
+	CreateSkyboxResources();
+
+
 	return gfx_err::OK;
 }
 
@@ -262,6 +285,73 @@ gfx_err Graphics::Destroy() {
 	return gfx_err::OK;
 }
 
+gfx_err Graphics::CreateSkyboxResources() {
+	float skyboxVertices[] = {
+		// positions          
+		-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		-1.0f,  1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		 1.0f, -1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f, -1.0f,
+
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		-1.0f, -1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+	};
+
+	//create vertex buffer
+
+	D3D11_BUFFER_DESC bd = { 0 };
+	D3D11_SUBRESOURCE_DATA initData = { 0 };
+
+	//create vertex buffer
+	bd.Usage = D3D11_USAGE::D3D11_USAGE_IMMUTABLE; //regular usage, no streaming or weirdness
+	bd.ByteWidth = static_cast<UINT>(sizeof(skyboxVertices));
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; //bind vertexes to vertex buffer
+	bd.CPUAccessFlags = 0;
+	initData.pSysMem = skyboxVertices; //attach data
+
+	err::ThrowOnFail(
+		d3dDevice->CreateBuffer(&bd, &initData, d3dSkyboxMesh.ReleaseAndGetAddressOf())
+	);
+
+	skyboxShader = LoadShader("shaders/Cubemap.vs.cso", "shaders/Cubemap.ps.cso", &d3dSkyboxLayout);
+
+	return gfx_err::OK;
+}
+
 #pragma region Rendering
 
 gfx_err Graphics::BeginRender()
@@ -275,6 +365,7 @@ gfx_err Graphics::BeginRender()
 
 	//clear depth buffer
 	d3dDeviceContext->ClearDepthStencilView(d3dDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
 
 
 	//clear render target
@@ -340,7 +431,7 @@ gfx_err Graphics::BeginRender()
 gfx_err Graphics::EndRender() {
 
 	gfx2d.Render();
-	d3dSwapChain->Present(0, 0);
+	d3dSwapChain->Present(vsync, 0);
 
 	return gfx_err::OK;
 }
@@ -355,6 +446,16 @@ gfx_err Graphics::SetTexture(const Texture* texture, int slot)
 	return gfx_err::OK;
 }
 
+
+void Graphics::SetDepthTest(bool value)
+{
+	if (value) {
+		d3dDeviceContext->OMSetDepthStencilState(nullptr, 0);
+	}
+	else {
+		d3dDeviceContext->OMSetDepthStencilState(d3dDisableDepthStencilState.Get(), 0);
+	}
+}
 
 void Graphics::EnableAlphaBlend()
 {
@@ -390,8 +491,42 @@ std::unique_ptr<Texture> Graphics::DXCreateTexture(void* pixels, int width, int 
 	initialData.SysMemPitch = pitch;
 	initialData.SysMemSlicePitch = 0;
 
-	return std::unique_ptr<Texture>(new Texture(d3dDevice.Get(),&texDesc, &initialData));
+	return std::unique_ptr<Texture>(new Texture(d3dDevice.Get(),&texDesc, &initialData, TextureType::NORMAL));
 }
+
+std::unique_ptr<Texture> Graphics::DXCreateCubemap(void* pixels[6], int width, int height, int pitch, DXGI_FORMAT format)
+{
+	//stolen from https://www.hlsl.co.uk/blog/2014/11/19/creating-a-cubemap-in-dx11
+	D3D11_TEXTURE2D_DESC texDesc;
+	texDesc.Width = width;
+	texDesc.Height = height;
+	texDesc.MipLevels = 1;
+	texDesc.ArraySize = 6;
+	texDesc.Format = format;
+	texDesc.CPUAccessFlags = 0;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.SampleDesc.Quality = 0;
+	texDesc.Usage = D3D11_USAGE_DEFAULT;
+	texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	texDesc.CPUAccessFlags = 0;
+	texDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+
+	//Array to fill which we will use to point D3D at our loaded CPU images.
+	D3D11_SUBRESOURCE_DATA initialData[6];
+	for (int i = 0; i < 6; i++)
+	{
+		//Pointer to the pixel data
+		initialData[i].pSysMem = pixels[i];
+		//Line width in bytes
+		initialData[i].SysMemPitch = pitch;
+		// This is only used for 3d textures.
+		initialData[i].SysMemSlicePitch = 0;
+	}
+
+
+	return std::unique_ptr<Texture>(new Texture(d3dDevice.Get(), &texDesc, initialData, TextureType::CUBEMAP));
+}
+
 
 
 gfx_err Graphics::SetShader(const Shader* shader) {
@@ -465,6 +600,30 @@ gfx_err Graphics::RenderModel(const Model* model, ::XMFLOAT4X4& transform)
 
 		RenderMesh(&it);
 	}
+
+	return gfx_err::OK;
+}
+
+gfx_err Graphics::RenderSkybox(const Texture* cubemap)
+{
+	//disable depth stencil 
+	SetDepthTest(false);
+
+	SetTexture(cubemap);
+
+	UINT stride = 3 * sizeof(float);
+	UINT offset = 0;
+
+	SetShader(skyboxShader.get());
+
+	d3dDeviceContext->IASetVertexBuffers(0, 1, d3dSkyboxMesh.GetAddressOf(), &stride, &offset);
+	d3dDeviceContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	d3dDeviceContext->Draw(36, 0);
+
+
+	//reenable depth stencil
+	SetDepthTest(true);
 
 	return gfx_err::OK;
 }

@@ -8,6 +8,8 @@
 
 #include <atomic>
 
+#include <cassert>
+
 
 typedef uint32_t RID; /* Resource ID*/
 
@@ -40,6 +42,7 @@ public:
 	IResource();
 
 	~IResource() {
+		assert(_count.Count() == 0);
 		std::cout << "delete " << _id << std::endl;
 	}
 
@@ -192,6 +195,11 @@ public:
 	void set_err_path(const std::string& path) {
 		err_path = path;
 
+	}
+
+	void clear() {
+		tag_map.clear();
+		map.clear();
 	}
 
 	bool contains(const std::string& tag) {

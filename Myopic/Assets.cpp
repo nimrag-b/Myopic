@@ -75,6 +75,62 @@ void Assets::LoadTexture(const ResourceLocation& tag) {
 	Register(tag.ToString(), std::move(tex));
 }
 
+void Assets::LoadCubemap(const ResourceLocation& tag) {
+
+	std::string pathBase = tag.Filepath("textures");
+
+	SDL_Surface* surfs[6];
+	surfs[0] = SDL_LoadSurface((pathBase + "/right.png").c_str());
+	surfs[1] = SDL_LoadSurface((pathBase + "/left.png").c_str());
+
+	surfs[2] = SDL_LoadSurface((pathBase + "/up.png").c_str());
+	surfs[3] = SDL_LoadSurface((pathBase + "/down.png").c_str());
+
+	surfs[4] = SDL_LoadSurface((pathBase + "/forward.png").c_str());
+	surfs[5] = SDL_LoadSurface((pathBase + "/back.png").c_str());
+
+	void* pixels[6];
+
+	for (size_t i = 0; i < 6; i++)
+	{
+		SDL_Surface* surfraw = surfs[i];
+		if (surfraw == nullptr) {
+			std::cout << "Failed to load cubemap in folder at " << pathBase << std::endl;
+			for (size_t j = 0; j < 6; j++)
+			{
+				SDL_DestroySurface(surfs[j]);
+			}
+			return;
+		}
+
+		SDL_Surface* surf = SDL_ConvertSurface(surfraw, SDL_PIXELFORMAT_BGRA32);
+
+		SDL_DestroySurface(surfraw);
+
+		surfs[i] = surf;
+
+		bool v = SDL_LockSurface(surf);
+
+		pixels[i] = surf->pixels;
+	}
+
+
+
+
+	auto tex = gfx.DXCreateCubemap(pixels, surfs[0]->w, surfs[0]->h, surfs[0]->pitch, DXGI_FORMAT_B8G8R8A8_UNORM);
+
+	for (size_t i = 0; i < 6; i++)
+	{
+		SDL_UnlockSurface(surfs[i]);
+
+		SDL_DestroySurface(surfs[i]);
+	}
+
+
+
+	Register(tag.ToString(), std::move(tex));
+}
+
 resource_ptr<Texture> Assets::GetOrCreateTexture(const ResourceLocation& tag)
 {
 	std::string name = tag.ToString();

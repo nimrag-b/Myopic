@@ -87,6 +87,9 @@
     <ClInclude Include="Model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Allocators.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Main.ps.hlsl">
@@ -107,9 +110,18 @@
     <FxCompile Include="GUI.vs.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Cubemap.ps.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Cubemap.vs.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ShaderHeader.hlsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="InputBuffers.hlsli">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

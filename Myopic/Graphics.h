@@ -47,15 +47,19 @@ public:
 
 	gfx_err RenderModel(const Model* model, ::XMFLOAT4X4& transform);
 
+	gfx_err RenderSkybox(const Texture* cubemap);
+
 	std::unique_ptr<Shader> LoadShader(const std::string& vertex, const std::string& fragment, VertexLayout* layout);
 
 	void UpdateSun(::XMFLOAT3 direction, ::XMFLOAT3 colour);
 
+	void SetDepthTest(bool value);
 	void EnableAlphaBlend();
 	void DisableAlphaBlend();
 	void DXBindD2dTexture();
 
 	std::unique_ptr<Texture> DXCreateTexture(void* pixels, int width, int height, int pitch, DXGI_FORMAT format);
+	std::unique_ptr<Texture> DXCreateCubemap(void* pixels[6], int width, int height, int pitch, DXGI_FORMAT format);
 
 	std::unique_ptr<Shader> DXCreateShader(ComPtr<ID3D11VertexShader> vertex, ComPtr<ID3D11PixelShader> pixel, const VertexLayout& layout);
 	ComPtr<ID3D11VertexShader> DXCreateGVertexVertexShader(const std::wstring& fileName);
@@ -76,6 +80,13 @@ public:
 
 	SDL_Window* SdlWindow() const {
 		return sdlWindow;
+	}
+	bool Vsync() noexcept {
+		return vsync > 0;
+	}
+
+	void SetVsync(bool value) noexcept {
+		vsync = value ? 1 : 0;
 	}
 
 	const uint32_t WindowWidth() const noexcept{
@@ -113,6 +124,13 @@ private:
 	ComPtr<ID3D11Buffer> d3dFrameDataBuffer = nullptr;
 	ComPtr<ID3D11Buffer> d3dObjectDataBuffer = nullptr;
 
+	ComPtr<ID3D11DepthStencilState> d3dDisableDepthStencilState = nullptr;
+
+	//Skybox Data
+	ComPtr<ID3D11Buffer> d3dSkyboxMesh = nullptr;
+	std::unique_ptr<Shader> skyboxShader = nullptr;
+	VertexLayout d3dSkyboxLayout{ { { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 } } };
+
 	//Render state
 	VertexLayout d3dGvertexLayout{ GVertexLayout };
 	const VertexLayout* currentVertexLayout = nullptr;
@@ -123,6 +141,14 @@ private:
 
 	uint32_t windowWidth = 0;
 	uint32_t windowHeight = 0;
+
+	UINT vsync = 0;
+
+
+	gfx_err CreateSkyboxResources();
+
+
+
 
 	//internal DX11 functions
 

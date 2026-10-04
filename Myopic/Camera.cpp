@@ -10,6 +10,9 @@ Camera::Camera(vector3_t position, vector3_t worldUp) {
 
     _eye = position;
     _worldUp = worldUp;
+
+    RecalculateRightVec();
+
     //DirectX::XMStoreFloat4x4(&frameData.view, DirectX::XMMatrixTranspose(DirectX::XMMatrixLookAtRH(_eye, _eye + _forward, _worldUp)));
 }
 
@@ -17,7 +20,7 @@ Camera::Camera(vector3_t position, vector3_t worldUp) {
 //rotate camera (using radians)
 void Camera::Rotate(float yaw, float pitch) {
 
-    pitch += asin(-_forward.y);
+    pitch += asin(_forward.y);
     yaw += atan2(_forward.z, _forward.x);
     //std::cout << yaw << std::endl;
 
@@ -26,6 +29,8 @@ void Camera::Rotate(float yaw, float pitch) {
     _forward.x = cosf(pitch) * cosf(yaw);
     _forward.y = sinf(pitch);
     _forward.z = cosf(pitch) * sinf(yaw);
+
+    RecalculateRightVec();
 }
 
 
