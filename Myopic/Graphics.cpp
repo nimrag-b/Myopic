@@ -622,7 +622,10 @@ gfx_err Graphics::RenderModel(const Model* model, ::XMFLOAT4X4& transform)
 gfx_err Graphics::RenderSkybox(const Texture* cubemap)
 {
 	//disable depth stencil 
-	DisableDepthTest();
+	//dont blindly set/reset incase it wasnt set originally
+	ID3D11DepthStencilState* depthStencil;
+	d3dDeviceContext->OMGetDepthStencilState(&depthStencil, 0);
+	d3dDeviceContext->OMSetDepthStencilState(d3dDisableDepthStencilState.Get(), 0);
 
 	SetTexture(cubemap);
 
@@ -641,7 +644,7 @@ gfx_err Graphics::RenderSkybox(const Texture* cubemap)
 
 
 	//reenable depth stencil
-	EnableDepthTest();
+	d3dDeviceContext->OMSetDepthStencilState(depthStencil, 0);
 
 	return gfx_err::OK;
 }

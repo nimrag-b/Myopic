@@ -26,15 +26,37 @@ bool input_set = false;
 std::string input;
 
 void read_input() {
+
+	HANDLE hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+	char buf[256];
+	DWORD bytesRead;
+	DWORD records;
+
+	INPUT_RECORD inputRecords[1];
+
+	//clear any os crap left behind
+	//FlushConsoleInputBuffer(hStdInput);
+
 	while (!should_quit) {
 		if (input_set) {
-			Sleep(5);
+			//std::cout << "sleepin" << std::endl;
+			Sleep(100);
 			continue;
 		}
-		
-		std::getline(std::cin, input);
-		input_set = true;
+		if (PeekConsoleInputA(hStdInput, inputRecords, 1, &records)) {
+			if (records == 0 || inputRecords->EventType != KEY_EVENT) {
+				FlushConsoleInputBuffer(hStdInput);
+			}
+			else {
+				ReadConsoleA(hStdInput, buf, 256, &bytesRead, NULL);
+
+				input = buf;
+				input_set = true;
+			}
+
+		}
 	}
+	std::cout << "quittin" << std::endl;
 }
 
 
@@ -98,6 +120,32 @@ int game(Graphics& gfx, Assets& assets) {
 						else if (v == 1) {
 							gfx.EnableWireframe();
 							std::cout << "Enabled Wireframe" << std::endl;
+						}
+					}
+				}
+				else if (args[0] == "depthtest") {
+					if (args.size() == 2) {
+						int v = std::stoi(args[1]);
+						if (v == 0) {
+							gfx.DisableDepthTest();
+							std::cout << "Disabled Depth Test" << std::endl;
+						}
+						else if (v == 1) {
+							gfx.EnableDepthTest();
+							std::cout << "Enabled Depth Test" << std::endl;
+						}
+					}
+				}
+				else if (args[0] == "alphablend") {
+					if (args.size() == 2) {
+						int v = std::stoi(args[1]);
+						if (v == 0) {
+							gfx.DisableAlphaBlend();
+							std::cout << "Disabled Alpha Blend" << std::endl;
+						}
+						else if (v == 1) {
+							gfx.EnableAlphaBlend();
+							std::cout << "Enabled Alpha Blend" << std::endl;
 						}
 					}
 				}
@@ -232,14 +280,9 @@ int game(Graphics& gfx, Assets& assets) {
 		}
 
 
-		//gfx.GetCamera().Rotate(1.0f * (float)delta, 0);
-
 		XMFLOAT3 sunPos = { 1,0,0 };
 		XMFLOAT3 axis = { 0,0,1 };
 		XMStoreFloat3(&sunPos, XMVector3Rotate(XMLoadFloat3(&sunPos), XMQuaternionRotationAxis(XMLoadFloat3(&axis), heavy_rot)));
-		//std::cout << sunPos.x << ", " << sunPos.y << ", " << sunPos.z << std::endl;
-		//std::cout << sunPos.x << std::endl;
-
 
 		XMFLOAT3 day = { 1.0f, 0.9f, 0.9f };
 		XMFLOAT3 night = { 49 / 255.0f, 49 / 255.0f, 163 / 255.0f };
@@ -247,6 +290,12 @@ int game(Graphics& gfx, Assets& assets) {
 		XMStoreFloat3(&res, XMVectorLerp(XMLoadFloat3(&day), XMLoadFloat3(&night), (sunPos.x + 1)/2.0f));
 
 		gfx.UpdateSun(sunPos, res);
+
+
+
+
+
+
 
 		gfx.BeginRender();
 
@@ -257,7 +306,7 @@ int game(Graphics& gfx, Assets& assets) {
 		heavy_rot += (float)delta;
 
 		XMFLOAT4X4 transform;
-		XMMATRIX xmm = ::XMMatrixRotationX(XM_PIDIV2) * ::XMMatrixRotationY(heavy_rot) * DirectX::XMMatrixScaling(5, 5, 5) * DirectX::XMMatrixTranslation(0, -5, 10);
+		XMMATRIX xmm = ::XMMatrixRotationX(XM_PIDIV2) * ::XMMatrixRotationY(0) * DirectX::XMMatrixScaling(5, 5, 5) * DirectX::XMMatrixTranslation(0, -5, 10);
 
 		//store the model matrix in the correct spot
 		DirectX::XMStoreFloat4x4(
@@ -267,17 +316,9 @@ int game(Graphics& gfx, Assets& assets) {
 
 		gfx.RenderModel(mod.get(), transform);
 
-		//gfx.EnableAlphaBlend();
-
-		//gfx.SetShader(guiShader.get());
-		//gfx.DXBindD2dTexture();
-		//gfx.RenderMesh(guiQuad.get());
-
-		//gfx.DisableAlphaBlend();
-
-
-
 		gfx.EndRender();
+
+
 	}
 
 	return 0;
