@@ -127,6 +127,7 @@
     <None Include="InputBuffers.hlsli">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="SDL3.pdb" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="heavy.naf" />
@@ -139,5 +140,6 @@
     <CopyFileToFolders Include="hvyweapon_red.png">
       <Filter>Resource Files</Filter>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="SDL3.dll" />
   </ItemGroup>
 </Project>

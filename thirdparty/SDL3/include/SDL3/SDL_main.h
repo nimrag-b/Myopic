@@ -193,19 +193,6 @@
          */
         #define SDL_MAIN_EXPORTED
 
-    #elif defined(SDL_PLATFORM_OPENHARMONY)
-        /* On HarmonyOS/OpenHarmony SDL does a lot of work to gain control of the app. */
-        #define SDL_MAIN_NEEDED
-
-        /* As this is launched from ArkTS, the real entry point (main() function)
-           is outside of the the binary built from this code.
-           This define makes sure that, unlike on other platforms, SDL_main.h
-           and SDL_main_impl.h export an `SDL_main()` function (to be called
-           from ArkTS, sort of), but don't implement a native
-           `int main(int argc, char* argv[])` or similar.
-         */
-        #define SDL_MAIN_EXPORTED
-
     #elif defined(SDL_PLATFORM_EMSCRIPTEN)
         /* On Emscripten, SDL provides a main function that converts URL
            parameters that start with "SDL_" to environment variables, so
@@ -231,19 +218,6 @@
         #define SDL_PS2_SKIP_IOP_RESET() \
            void reset_IOP(); \
            void reset_IOP() {}
-
-    #elif defined(SDL_PLATFORM_DOS)
-        /*
-          On DOS, SDL provides a main function that sets up memory
-          page locking (code, data, stack are locked, future
-          malloc calls are not locked), and sets up the "fat DS"
-          trick, so we can use C pointers from protected mode that
-          access conventional memory. SDL _requires_ the "fat DS"
-          trick!
-
-          If you provide this yourself, you may define SDL_MAIN_HANDLED
-        */
-        #define SDL_MAIN_AVAILABLE
 
     #elif defined(SDL_PLATFORM_3DS)
         /*
@@ -690,14 +664,12 @@ extern SDL_DECLSPEC void SDLCALL SDL_UnregisterApp(void);
 /**
  * Callback from the application to let the suspend continue.
  *
- * This should be called in response to an `SDL_EVENT_DID_ENTER_BACKGROUND`
- * event, which can be detected via event watch. However, do NOT call this
- * function directly from within an event watch callback. Instead, wait until
- * the app has suppressed all rendering operations, then call this from the
- * application render thread.
+ * This should be called from an event watch in response to an
+ * `SDL_EVENT_DID_ENTER_BACKGROUND` event.
  *
- * When using SDL_Render, this should be called after calling
- * SDL_GDKSuspendRenderer.
+ * When using SDL_Render, your event watch should be added _after_ creating
+ * the `SDL_Renderer`; this allows the timing of the D3D12 command queue
+ * suspension to execute in the correct order.
  *
  * When using SDL_GPU, this should be called after calling SDL_GDKSuspendGPU.
  *
