@@ -53,10 +53,15 @@ public:
 
 	void UpdateSun(::XMFLOAT3 direction, ::XMFLOAT3 colour);
 
-	void SetDepthTest(bool value);
+	void EnableDepthTest();
+	void DisableDepthTest();
+
+	void EnableWireframe();
+	void DisableWireframe();
+
 	void EnableAlphaBlend();
 	void DisableAlphaBlend();
-	void DXBindD2dTexture();
+
 
 	std::unique_ptr<Texture> DXCreateTexture(void* pixels, int width, int height, int pitch, DXGI_FORMAT format);
 	std::unique_ptr<Texture> DXCreateCubemap(void* pixels[6], int width, int height, int pitch, DXGI_FORMAT format);
@@ -125,6 +130,8 @@ private:
 	ComPtr<ID3D11Buffer> d3dObjectDataBuffer = nullptr;
 
 	ComPtr<ID3D11DepthStencilState> d3dDisableDepthStencilState = nullptr;
+
+	ComPtr<ID3D11RasterizerState> d3dEnableWireframeRasterizer = nullptr;
 
 	//Skybox Data
 	size_t d3dSkyboxCount = 0;

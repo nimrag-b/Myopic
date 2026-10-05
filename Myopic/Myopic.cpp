@@ -12,12 +12,31 @@
 #include "Model.h"
 
 #include <thread>
+#include <sstream>
+
+bool should_quit = false;
 
 int avg_fps_v = 0;
 
 int avg_fps() {
 	return avg_fps_v;
 }
+
+bool input_set = false;
+std::string input;
+
+void read_input() {
+	while (!should_quit) {
+		if (input_set) {
+			Sleep(5);
+			continue;
+		}
+		
+		std::getline(std::cin, input);
+		input_set = true;
+	}
+}
+
 
 std::unique_ptr<Model> mod;
 void load(Assets& assets) {
@@ -54,8 +73,38 @@ int game(Graphics& gfx, Assets& assets) {
 	double fps_avg[FPS_AVG_COUNT] = { 0 };
 	int fps_avg_ptr = 0;
 
-	bool should_quit = false;
+
 	while (!should_quit) {
+
+
+		if (input_set) {
+			std::string in = input;
+			input_set = false;
+
+			std::stringstream ss(in);
+			std::vector<std::string> args;
+			std::string s;
+			while (std::getline(ss, s, ' ')) {
+				args.push_back(s);
+			}
+			if (args.size() != 0) {
+				if (args[0] == "wireframe") {
+					if (args.size() == 2) {
+						int v = std::stoi(args[1]);
+						if (v == 0) {
+							gfx.DisableWireframe();
+							std::cout << "Disabled Wireframe" << std::endl;
+						}
+						else if (v == 1) {
+							gfx.EnableWireframe();
+							std::cout << "Enabled Wireframe" << std::endl;
+						}
+					}
+				}
+			}
+
+
+		}
 
 		Uint64 CUR = SDL_GetTicksNS();
 
@@ -87,7 +136,7 @@ int game(Graphics& gfx, Assets& assets) {
 
 			avg_fps_v = frames;
 
-			std::cout << frames << "fps" << std::endl;
+			//std::cout << frames << "fps" << std::endl;
 
 			t = 0;
 			frames = 0;
@@ -101,9 +150,9 @@ int game(Graphics& gfx, Assets& assets) {
 		}
 
 
-
 		SDL_Event e;
 		while (SDL_PollEvent(&e)) {
+
 			switch (e.type)
 			{
 			case SDL_EVENT_QUIT:
@@ -236,11 +285,14 @@ int game(Graphics& gfx, Assets& assets) {
 
 int myopic() {
 
+
 	Graphics gfx;
 	gfx.Initialise();
 	Assets assets(gfx);
 
 	std::thread load_thread(load, std::ref(assets));
+
+	std::thread input_thread(read_input);
 
 	game(gfx, assets);
 
@@ -249,6 +301,7 @@ int myopic() {
 	gfx.Destroy();
 
 	load_thread.join();
+	input_thread.join();
 
 	return 0;
 }

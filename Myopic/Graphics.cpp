@@ -232,13 +232,12 @@ gfx_err Graphics::Initialise() {
 	);
 
 
-	//ComPtr<ID3D11RasterizerState> rsState;
-	//CD3D11_RASTERIZER_DESC rsDesc{ CD3D11_DEFAULT() };
-	//rsDesc.CullMode = D3D11_CULL_NONE;
-	//rsDesc.FillMode = D3D11_FILL_WIREFRAME;
+	CD3D11_RASTERIZER_DESC rsDesc{ CD3D11_DEFAULT() };
+	rsDesc.CullMode = D3D11_CULL_NONE;
+	rsDesc.FillMode = D3D11_FILL_WIREFRAME;
 
-	//d3dDevice->CreateRasterizerState(&rsDesc, &rsState);
-	//d3dDeviceContext->RSSetState(rsState.Get());
+	d3dDevice->CreateRasterizerState(&rsDesc, &d3dEnableWireframeRasterizer);
+
 
 	//finally, init any internal gamestate managed by the renderer
 
@@ -334,7 +333,7 @@ gfx_err Graphics::CreateSkyboxResources() {
 	};
 
 
-	Icosphere sphere(5);
+	Icosphere sphere(2);
 
 	auto& skydomeVerts = sphere.verts();
 	auto& skydomeIndices = sphere.inds();
@@ -451,6 +450,9 @@ gfx_err Graphics::EndRender() {
 
 #pragma endregion
 
+#pragma region State Management
+
+
 gfx_err Graphics::SetTexture(const Texture* texture, int slot)
 {
 	d3dDeviceContext->PSSetShaderResources(slot, 1, texture->d3dSrv.GetAddressOf());
@@ -458,33 +460,35 @@ gfx_err Graphics::SetTexture(const Texture* texture, int slot)
 }
 
 
-void Graphics::SetDepthTest(bool value)
+void Graphics::EnableDepthTest()
 {
-	if (value) {
-		d3dDeviceContext->OMSetDepthStencilState(nullptr, 0);
-	}
-	else {
-		d3dDeviceContext->OMSetDepthStencilState(d3dDisableDepthStencilState.Get(), 0);
-	}
+	d3dDeviceContext->OMSetDepthStencilState(nullptr, 0);
 }
+void Graphics::DisableDepthTest()
+{
+	d3dDeviceContext->OMSetDepthStencilState(d3dDisableDepthStencilState.Get(), 0);
+}
+
+void Graphics::EnableWireframe() {
+	d3dDeviceContext->RSSetState(d3dEnableWireframeRasterizer.Get());
+}
+void Graphics::DisableWireframe() {
+	d3dDeviceContext->RSSetState(nullptr);
+}
+
 
 void Graphics::EnableAlphaBlend()
 {
 	d3dDeviceContext->OMSetBlendState(d3dBlendStateAlpha.Get(), NULL, 0xFFFFFF);
-	ID3D11RenderTargetView* const targets[1] = { d3dRenderTargetView.Get() };
-	d3dDeviceContext->OMSetRenderTargets(1, targets, nullptr);
 }
 void Graphics::DisableAlphaBlend()
 {
 	d3dDeviceContext->OMSetBlendState(NULL, NULL, 0xFFFFFFFF);
-	ID3D11RenderTargetView* const targets[1] = { d3dRenderTargetView.Get() };
-	d3dDeviceContext->OMSetRenderTargets(1, targets, d3dDepthStencilView.Get());
 }
 
-void Graphics::DXBindD2dTexture()
-{
-	//d3dDeviceContext->PSSetShaderResources(0, 1, d2dShaderResourceView.GetAddressOf());
-}
+#pragma endregion
+
+
 
 std::unique_ptr<Texture> Graphics::DXCreateTexture(void* pixels, int width, int height, int pitch, DXGI_FORMAT format)
 {
@@ -618,7 +622,7 @@ gfx_err Graphics::RenderModel(const Model* model, ::XMFLOAT4X4& transform)
 gfx_err Graphics::RenderSkybox(const Texture* cubemap)
 {
 	//disable depth stencil 
-	SetDepthTest(false);
+	DisableDepthTest();
 
 	SetTexture(cubemap);
 
@@ -637,7 +641,7 @@ gfx_err Graphics::RenderSkybox(const Texture* cubemap)
 
 
 	//reenable depth stencil
-	SetDepthTest(true);
+	EnableDepthTest();
 
 	return gfx_err::OK;
 }
