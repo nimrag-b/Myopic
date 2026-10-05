@@ -36,6 +36,7 @@ cbuffer FrameDataBuffer : register(b1)
     matrix lightView;
     */
     float3 viewPos;
+    uint ticks; // time val, incremented per game tick
 
 };
 cbuffer ObjectDataBuffer : register(b2)

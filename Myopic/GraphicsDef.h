@@ -62,7 +62,7 @@ struct alignas(16) FrameDataBuffer {
     DirectX::XMFLOAT4X4 view;
 
     DirectX::XMFLOAT3 viewPos;
-
+	uint32_t ticks;
 };
 
 //changed for every object

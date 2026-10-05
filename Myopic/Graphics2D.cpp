@@ -114,9 +114,11 @@ gfx_err Graphics2D::Render() {
 	d2dDeviceContext->BeginDraw();
 
 	//d2dDeviceContext->FillRectangle(D2D1::RectF(100, 100, 200, 200), solidBrush.Get());
-	int fps = avg_fps();
+	auto fps = avg_fps();
 
-	const std::wstring sc_helloWorld = std::to_wstring(fps) + L"ms";
+	std::wstring sc_helloWorld;
+	
+	sc_helloWorld = std::to_wstring(fps) + L"fps";
 
 	d2dDeviceContext->DrawTextW(
 		sc_helloWorld.c_str(),

@@ -127,6 +127,8 @@ private:
 	ComPtr<ID3D11DepthStencilState> d3dDisableDepthStencilState = nullptr;
 
 	//Skybox Data
+	size_t d3dSkyboxCount = 0;
+	SubMesh d3dSkyDome;
 	ComPtr<ID3D11Buffer> d3dSkyboxMesh = nullptr;
 	std::unique_ptr<Shader> skyboxShader = nullptr;
 	VertexLayout d3dSkyboxLayout{ { { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 } } };

@@ -7,7 +7,7 @@
 
 #include <SDL3/SDL.h>
 
-
+#include "Icosphere.h"
 
 
 #if _DEBUG
@@ -235,6 +235,7 @@ gfx_err Graphics::Initialise() {
 	//ComPtr<ID3D11RasterizerState> rsState;
 	//CD3D11_RASTERIZER_DESC rsDesc{ CD3D11_DEFAULT() };
 	//rsDesc.CullMode = D3D11_CULL_NONE;
+	//rsDesc.FillMode = D3D11_FILL_WIREFRAME;
 
 	//d3dDevice->CreateRasterizerState(&rsDesc, &rsState);
 	//d3dDeviceContext->RSSetState(rsState.Get());
@@ -285,6 +286,7 @@ gfx_err Graphics::Destroy() {
 	return gfx_err::OK;
 }
 
+
 gfx_err Graphics::CreateSkyboxResources() {
 	float skyboxVertices[] = {
 		// positions          
@@ -330,6 +332,15 @@ gfx_err Graphics::CreateSkyboxResources() {
 		-1.0f,  1.0f, -1.0f,
 		 1.0f,  1.0f, -1.0f,
 	};
+
+
+	Icosphere sphere(5);
+
+	auto& skydomeVerts = sphere.verts();
+	auto& skydomeIndices = sphere.inds();
+
+	CreateSubMesh(d3dSkyDome, skydomeVerts, 3 * sizeof(float), skydomeIndices);
+
 
 	//create vertex buffer
 
@@ -616,10 +627,13 @@ gfx_err Graphics::RenderSkybox(const Texture* cubemap)
 
 	SetShader(skyboxShader.get());
 
-	d3dDeviceContext->IASetVertexBuffers(0, 1, d3dSkyboxMesh.GetAddressOf(), &stride, &offset);
-	d3dDeviceContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//d3dDeviceContext->IASetVertexBuffers(0, 1, d3dSkyboxMesh.GetAddressOf(), &stride, &offset);
+	//d3dDeviceContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	d3dDeviceContext->Draw(36, 0);
+	//d3dDeviceContext->Draw(d3dSkyboxCount, 0);
+
+	RenderMesh(&d3dSkyDome);
+
 
 
 	//reenable depth stencil

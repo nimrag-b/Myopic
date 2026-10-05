@@ -70,27 +70,31 @@ int game(Graphics& gfx, Assets& assets) {
 		fps_avg_ptr = (fps_avg_ptr + 1) % FPS_AVG_COUNT;
 
 
+		double fps_avg_v = 0;
+		for (size_t i = 0; i < FPS_AVG_COUNT; i++)
+		{
+			fps_avg_v += fps_avg[i];
+		}
 
+		fps_avg_v /= FPS_AVG_COUNT;
+
+		avg_fps_v = 1 / fps_avg_v;
+
+		//avg_fps_v = 1.0 / delta;
 
 
 		if (t > 1) {
 
+			avg_fps_v = frames;
+
+			std::cout << frames << "fps" << std::endl;
+
 			t = 0;
 			frames = 0;
 
-			double fps_avg_v = 0;
-			for (size_t i = 0; i < FPS_AVG_COUNT; i++)
-			{
-				fps_avg_v += fps_avg[i];
-			}
 
-			fps_avg_v /= FPS_AVG_COUNT;
 
-			int fps_avg_vi = 1 / fps_avg_v;
 
-			avg_fps_v = fps_avg_vi;
-
-			std::cout << avg_fps_v << "ms" << std::endl;
 
 			//std::string title = "(avg " + std::to_string(fps_avg_vi) + ")";
 			//SDL_SetWindowTitle(gfx.SdlWindow(), title.c_str());
