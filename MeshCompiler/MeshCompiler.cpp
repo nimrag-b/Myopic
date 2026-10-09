@@ -194,7 +194,7 @@ bool GetPartsForFile(const std::string& inFile, std::vector<mesh_part>& meshes, 
         aiProcess_Triangulate |
         aiProcess_JoinIdenticalVertices |
         aiProcess_SortByPType |
-        (aiProcess_MakeLeftHanded | aiProcess_FlipUVs /* | aiProcess_FlipWindingOrder */ | 0));
+        aiProcess_ConvertToLeftHanded);
 
     // If the import failed, report it
     if (nullptr == scene) {

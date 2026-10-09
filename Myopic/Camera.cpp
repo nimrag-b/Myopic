@@ -40,6 +40,6 @@ XMMATRIX Camera::GetView() {
     DirectX::XMVECTOR at = eye + DirectX::XMLoadFloat3(&_forward);
     DirectX::XMVECTOR worldUp = DirectX::XMLoadFloat3(&_worldUp);
 
-    return DirectX::XMMatrixTranspose(DirectX::XMMatrixLookAtRH(eye, at, worldUp));
+    return DirectX::XMMatrixTranspose(DirectX::XMMatrixLookAtLH(eye, at, worldUp));
     //return ::XMMatrixLookAtRH(eye, at, worldUp);
 }

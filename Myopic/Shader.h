@@ -9,16 +9,20 @@ public:
 	Shader() {
 
 	}
-	Shader(ComPtr<ID3D11PixelShader> pixelShader, ComPtr<ID3D11VertexShader> vertexShader, const VertexLayout* layout) : d3dPixelShader(pixelShader), d3dVertexShader(vertexShader), layout(layout) {
-
+	gfx_err Create(ComPtr<ID3D11PixelShader> pixelShader, ComPtr<ID3D11VertexShader> vertexShader, const VertexLayout* layout) {
+		d3dPixelShader = pixelShader;
+		d3dVertexShader = vertexShader;
+		mLayout = layout;
+		_initialised = true;
+		return gfx_err::OK;
 	}
 
 	const VertexLayout& Layout() const {
-		return *layout;
+		return *mLayout;
 	}
 private:
 	ComPtr<ID3D11PixelShader> d3dPixelShader = nullptr;
 	ComPtr<ID3D11VertexShader> d3dVertexShader = nullptr;
-	const VertexLayout* layout = nullptr;
+	const VertexLayout* mLayout = nullptr;
 };
 

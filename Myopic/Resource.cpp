@@ -10,5 +10,5 @@ static uint32_t next_id() {
 
 IResource::IResource() {
 	_id = next_id();
-	std::cout << "new " << _id << std::endl;
+	std::cout << "new " << _id <<  std::endl;
 }

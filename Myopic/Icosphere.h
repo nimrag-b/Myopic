@@ -8,20 +8,20 @@ public:
 		float t = (1.0f + sqrtf(5.0f)) / 2.0f;
 		index = 0;
 
-		addVertex(-1, 0, t);
-		addVertex(1, 0, t);
-		addVertex(-1, 0, -t);
-		addVertex(1, 0, -t);
+		addVertex(-1, t, 0);
+		addVertex(1, t, 0);
+		addVertex(-1, -t, 0);
+		addVertex(1, -t, 0);
 
-		addVertex(0, t, -1);
-		addVertex(0, t, 1);
-		addVertex(0, -t, -1);
-		addVertex(0, -t, 1);
+		addVertex(0, -1, t);
+		addVertex(0, 1, t);
+		addVertex(0, -1, -t);
+		addVertex(0, 1, -t);
 
-		addVertex(t, -1, 0);
-		addVertex(t, 1, 0);
-		addVertex(-t, -1, 0);
-		addVertex(-t, 1, 0);
+		addVertex(t, 0, -1);
+		addVertex(t, 0, 1);
+		addVertex(-t, 0, -1);
+		addVertex(-t, 0, 1);
 
 		
 

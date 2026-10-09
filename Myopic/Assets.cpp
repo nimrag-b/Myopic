@@ -63,9 +63,9 @@ Shader* AssetManager::LoadShader(const std::string& tag, const std::string& vert
 	const std::wstring wpix = std::wstring(fragment.begin(), fragment.end());
 	ps = gfx.DXCreatePixelShader(wpix);
 
-	Shader* shader = mAllocator.alloc<Shader>();
-
-	if (gfx.DXCreateShader(shader, vs, ps, *layout) != gfx_err::OK) {
+	Shader* shader = mAllocator.alloc_object<Shader>();
+	
+	if (shader->Create(ps, vs, layout) != gfx_err::OK) {
 		mAllocator.dealloc(shader);
 		return nullptr;
 	}
@@ -93,7 +93,7 @@ Texture* AssetManager::LoadTexture(const ResourceLocation& tag)
 
 	bool v = SDL_LockSurface(surf);
 
-	Texture* t = mAllocator.alloc<Texture>();
+	Texture* t = mAllocator.alloc_object<Texture>();
 
 	gfx_err err = gfx.DXCreateTexture(t, surf->pixels, surf->w, surf->h, surf->pitch, DXGI_FORMAT_B8G8R8A8_UNORM);
 
@@ -153,7 +153,7 @@ Texture* AssetManager::LoadCubemap(const ResourceLocation& tag) {
 	}
 
 
-	Texture* t = mAllocator.alloc<Texture>();
+	Texture* t = mAllocator.alloc_object<Texture>();
 
 	gfx_err err = gfx.DXCreateCubemap(t, pixels, surfs[0]->w, surfs[0]->h, surfs[0]->pitch, DXGI_FORMAT_B8G8R8A8_UNORM);
 
@@ -209,10 +209,9 @@ Material* AssetManager::LoadMaterial(const ResourceLocation& name, const Materia
 	}
 	
 	Shader* shader = mShaders.get(compute_string_hash(def.shader.ToString().c_str()));
-
-	Material* mat = mAllocator.alloc<Material>();
-
-	new (mat) Material(def.colour, def.specular, def.fresnelRange, shader, tex, normal);
+	
+	//cant alloc object as material has no default ctor
+	Material* mat = new (mAllocator.alloc(sizeof(Material))) Material(def.colour, def.specular, def.fresnelRange, shader, tex, normal);
 
 	mMaterials.insert(compute_string_hash(name.ToString().c_str()), mat);
 
@@ -402,7 +401,7 @@ Model* AssetManager::LoadModel(const ResourceLocation& tag) {
 
 		for (size_t i = 0; i < numMeshes; i++)
 		{
-			Mesh* mesh = mAllocator.alloc<Mesh>();
+			Mesh* mesh = mAllocator.alloc_object<Mesh>();
 			mesh_part& part = parts[i];
 			gfx.CreateMesh(mesh, part.verts, sizeof(GVertex), part.indices, part.material_index);
 
@@ -440,7 +439,8 @@ Model* AssetManager::LoadModel(const ResourceLocation& tag) {
 
 	
 
-	Model* model = new (mAllocator.alloc<Model>()) Model(meshes, mats);
+	Model* model = mAllocator.alloc_object<Model>();
+	model->Create(meshes, mats);
 	mModels.insert(compute_string_hash(resloc.c_str()), model);
 	return model;
 }
@@ -476,14 +476,14 @@ void AssetManager::CreateDefaults()
 
 	//textures
 	auto missing_tex_raw = generate_missing_tex();
-	Texture* missing_tex = mAllocator.alloc<Texture>();
+	Texture* missing_tex = mAllocator.alloc_object<Texture>();
 	err = gfx.DXCreateTexture(missing_tex, (void*)missing_tex_raw.data(), missing_tex_width, missing_tex_width, missing_tex_width * 4, DXGI_FORMAT_B8G8R8A8_UNORM);
 
 	const uint8_t normalData[4]{ //1x1 normal map pointing out
 	255,128,128,255
 	};
 
-	Texture* missing_normal = mAllocator.alloc<Texture>();
+	Texture* missing_normal = mAllocator.alloc_object<Texture>();
 	err = gfx.DXCreateTexture(missing_normal, (void*)normalData, 1, 1, 4, DXGI_FORMAT_B8G8R8A8_UNORM);
 
 
@@ -491,7 +491,7 @@ void AssetManager::CreateDefaults()
 	255,255,255,255
 	};
 
-	Texture* blank_texture = mAllocator.alloc<Texture>();
+	Texture* blank_texture = mAllocator.alloc_object<Texture>();
 	err = gfx.DXCreateTexture(blank_texture, (void*)blankData, 1, 1, 4, DXGI_FORMAT_B8G8R8A8_UNORM);
 
 

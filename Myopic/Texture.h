@@ -12,15 +12,21 @@ enum class TextureType {
 class Texture : public IResource {
 	friend class Graphics;
 public:
+	Texture(){}
 
-	Texture(ID3D11Device* d3dDevice, D3D11_TEXTURE2D_DESC* desc, D3D11_SUBRESOURCE_DATA* initialData, TextureType type) : type(type) {
+	gfx_err Create(ID3D11Device* d3dDevice, D3D11_TEXTURE2D_DESC* desc, D3D11_SUBRESOURCE_DATA* initialData, TextureType type){
+
+
+		mType = type;
 
 		HRESULT hr = d3dDevice->CreateTexture2D(desc, initialData, d3dTex.ReleaseAndGetAddressOf());
-		
+		if (FAILED(hr)) {
+			return gfx_err::BACKEND_ERROR;
+		}
 
-		D3D_SRV_DIMENSION dimension;
+		D3D_SRV_DIMENSION dimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 
-		switch (type)
+		switch (mType)
 		{
 		case TextureType::NORMAL:
 			dimension = D3D11_SRV_DIMENSION_TEXTURE2D;
@@ -36,17 +42,19 @@ public:
 		);
 
 		hr = d3dDevice->CreateShaderResourceView(d3dTex.Get(), &srvDesc, d3dSrv.ReleaseAndGetAddressOf());
+		if (FAILED(hr)) {
+			d3dTex.Reset();
+			return gfx_err::BACKEND_ERROR;
+		}
+
+		_initialised = true;
+
+		return gfx_err::OK;
 	}
 
 
 private:
-	ComPtr<ID3D11Texture2D> d3dTex;
-	ComPtr<ID3D11ShaderResourceView> d3dSrv;
-	TextureType type;
-};
-
-
-struct CubeMap {
-	ComPtr<ID3D11Texture2D> d3dTex;
-	ComPtr<ID3D11ShaderResourceView> d3dSrv;
+	ComPtr<ID3D11Texture2D> d3dTex = nullptr;
+	ComPtr<ID3D11ShaderResourceView> d3dSrv = nullptr;
+	TextureType mType = TextureType::NORMAL;
 };

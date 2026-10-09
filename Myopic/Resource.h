@@ -82,10 +82,17 @@ public:
 		return _intrinsic;
 	}
 
+	bool initialised() const {
+		return _initialised;
+	}
+
 private:
 	RID _id = 0;
 	ref_count _count;
+
 	bool _intrinsic = false; //dont ever delete this
+protected:
+	bool _initialised = false;
 };
 
 

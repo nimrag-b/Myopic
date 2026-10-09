@@ -418,23 +418,6 @@ gfx_err Graphics::BeginRender()
 	d3dDeviceContext->UpdateSubresource(d3dFrameDataBuffer.Get(), 0, nullptr, &frameData, 0, 0);
 
 
-	ObjectDataBuffer objectData;
-
-	XMMATRIX xmm = DirectX::XMMatrixScaling(0.2f, 0.2f, 0.2f) * DirectX::XMMatrixTranslation(0, -10, 20);
-
-	//store the model matrix in the correct spot
-	DirectX::XMStoreFloat4x4(
-		&objectData.worldMatrix,
-		XMMatrixTranspose(xmm)
-	);
-
-	objectData.meshColor = { 1,1,1,1 };
-	objectData.specular = 0.2f;
-	objectData.fresnelRange = { 0,0.5f,1 };
-
-
-	d3dDeviceContext.Get()->UpdateSubresource(d3dObjectDataBuffer.Get(), 0, nullptr, &objectData, 0, 0);
-
 
 	return gfx_err::OK;
 }
@@ -507,9 +490,9 @@ gfx_err Graphics::DXCreateTexture(Texture* pTex, void* pixels, int width, int he
 	initialData.SysMemPitch = pitch;
 	initialData.SysMemSlicePitch = 0;
 
-	new (pTex) Texture(d3dDevice.Get(), &texDesc, &initialData, TextureType::NORMAL);
+	
 
-	return gfx_err::OK;
+	return pTex->Create(d3dDevice.Get(), &texDesc, &initialData, TextureType::NORMAL);
 }
 
 gfx_err Graphics::DXCreateCubemap(Texture* pTex, void* pixels[6], int width, int height, int pitch, DXGI_FORMAT format)
@@ -541,9 +524,9 @@ gfx_err Graphics::DXCreateCubemap(Texture* pTex, void* pixels[6], int width, int
 		initialData[i].SysMemSlicePitch = 0;
 	}
 
-	new (pTex) Texture(d3dDevice.Get(), &texDesc, initialData, TextureType::CUBEMAP);
+	
 
-	return gfx_err::OK;
+	return pTex->Create(d3dDevice.Get(), &texDesc, initialData, TextureType::CUBEMAP);
 }
 
 
@@ -562,24 +545,24 @@ gfx_err Graphics::SetShader(const Shader* shader) {
 
 gfx_err Graphics::SetMaterial(const Material* material)
 {
-	SetShader(material->shader.get());
-	SetTexture(material->texture.get(), 0);
-	SetTexture(material->normal.get(), 1);
+	SetShader(material->mShader.get());
+	SetTexture(material->mTexture.get(), 0);
+	SetTexture(material->mNormal.get(), 1);
 
 	return gfx_err::OK;
 }
 
 gfx_err Graphics::UpdateObjectProps(const Material* material, ObjectDataBuffer& buffer) {
-	buffer.fresnelRange = material->fresnelRange;
-	buffer.meshColor = material->meshColour;
-	buffer.specular = material->specular;
+	buffer.fresnelRange = material->mFresnelRange;
+	buffer.meshColor = material->mMeshColour;
+	buffer.specular = material->mSpecular;
 	return gfx_err::OK;
 }
 
 gfx_err Graphics::RenderMesh(const Mesh* mesh) {
 	if (mesh == nullptr) return gfx_err::NULL_ERROR;
 
-	UINT stride = static_cast<UINT>(mesh->stride);
+	UINT stride = static_cast<UINT>(mesh->mStride);
 	UINT offset = 0;
 	//bind mesh
 	d3dDeviceContext->IASetVertexBuffers(0, 1, mesh->d3dVertexBuffer.GetAddressOf(), &stride, &offset);
@@ -587,7 +570,7 @@ gfx_err Graphics::RenderMesh(const Mesh* mesh) {
 	//bind vertices
 	d3dDeviceContext->IASetIndexBuffer(mesh->d3dIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 	d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	d3dDeviceContext->DrawIndexed(static_cast<UINT>(mesh->indexCount), 0, 0);
+	d3dDeviceContext->DrawIndexed(static_cast<UINT>(mesh->mIndexCount), 0, 0);
 
 	return gfx_err::OK;
 }
@@ -598,22 +581,22 @@ gfx_err Graphics::RenderModel(const Model* model, ::XMFLOAT4X4& transform)
 		return gfx_err::NULL_ERROR;
 	}
 	ObjectDataBuffer odb;
-	odb.worldMatrix = transform;
+	::XMStoreFloat4x4(&odb.worldMatrix, ::XMMatrixTranspose(::XMLoadFloat4x4(&transform))); //store transposed because hlsl prefers it that way
 
-	for (auto& it : model->meshes)
+	for (auto& it : model->mMeshes)
 	{
-		if (it->materialIndex >= model->material_count) {
+		if (it->mMaterialIndex >= model->mMaterialCount) {
 			return gfx_err::CONFIG_ERROR;
 		}
 
-		Material* mat = model->materials[it->materialIndex].get();
+		Material* mat = model->mMaterials[it->mMaterialIndex];
 
 		SetMaterial(mat);
 		UpdateObjectProps(mat, odb);
 		d3dDeviceContext.Get()->UpdateSubresource(d3dObjectDataBuffer.Get(), 0, nullptr, &odb, 0, 0);
 
-		SetTexture(mat->texture.get(), 0);
-		SetTexture(mat->normal.get(), 1);
+		SetTexture(mat->mTexture.get(), 0);
+		SetTexture(mat->mNormal.get(), 1);
 
 		RenderMesh(it);
 	}
@@ -679,9 +662,7 @@ void Graphics::UpdateSun(::XMFLOAT3 direction, ::XMFLOAT3 colour)
 
 gfx_err Graphics::DXCreateShader(Shader* pShader, ComPtr<ID3D11VertexShader> vertex, ComPtr<ID3D11PixelShader> pixel, const VertexLayout& layout)
 {
-	//placement new construct
-	new (pShader) Shader(pixel, vertex, &layout);
-	return gfx_err::OK;
+	return pShader->Create(pixel, vertex, &layout);
 }
 
 bool Graphics::DXCompileShader(const std::wstring& fileName, const std::string& entryPoint, const std::string& profile, ComPtr<ID3DBlob>& shaderBlob)
@@ -796,46 +777,7 @@ ComPtr<ID3D11PixelShader> Graphics::DXCreatePixelShader(const std::wstring& file
 
 void Graphics::CreateMesh(Mesh* mesh, std::vector<float>& vertices, size_t vertex_size_bytes, std::vector<uint32_t>& indices, size_t material_index)
 {
-	new (mesh) Mesh();
-	//create vertex buffer
-
-	mesh->vertexCount = (vertices.size() * sizeof(float)) / vertex_size_bytes;
-	mesh->stride = vertex_size_bytes;
-
-	D3D11_BUFFER_DESC bd = { 0 };
-	D3D11_SUBRESOURCE_DATA initData = { 0 };
-
-	//create vertex buffer
-	bd.Usage = D3D11_USAGE::D3D11_USAGE_IMMUTABLE; //regular usage, no streaming or weirdness
-	bd.ByteWidth = static_cast<UINT>(vertices.size() * sizeof(float));
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; //bind vertexes to vertex buffer
-	bd.CPUAccessFlags = 0;
-	initData.pSysMem = vertices.data(); //attach data
-
-	err::ThrowOnFail(
-		d3dDevice->CreateBuffer(&bd, &initData, mesh->d3dVertexBuffer.ReleaseAndGetAddressOf())
-	);
-
-	//create index buffer
-
-	mesh->indexCount = indices.size();
-
-	bd = { 0 };
-	initData = { 0 };
-	//create index buffer
-	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = static_cast<UINT>(sizeof(uint32_t) * indices.size());
-	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	bd.CPUAccessFlags = 0;
-	initData.pSysMem = indices.data();
-
-	err::ThrowOnFail(
-		d3dDevice->CreateBuffer(&bd, &initData, mesh->d3dIndexBuffer.ReleaseAndGetAddressOf())
-	);
-
-
-	//assign extra data
-	mesh->materialIndex = material_index;
+	mesh->Create(d3dDevice.Get(), vertices, vertex_size_bytes, indices, material_index);
 
 }
 
@@ -975,7 +917,7 @@ bool Graphics::DXUpdateWindowResources()
 	float fovAngleY = 60.0f * DirectX::XM_PI / 180.0f;
 
 	// This sample makes use of a right-handed coordinate system using row-major matrices.
-	DirectX::XMMATRIX perspectiveMatrix = DirectX::XMMatrixPerspectiveFovRH(
+	DirectX::XMMATRIX perspectiveMatrix = DirectX::XMMatrixPerspectiveFovLH(
 		fovAngleY,
 		aspectRatio,
 		0.01f,

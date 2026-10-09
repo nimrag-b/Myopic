@@ -22,6 +22,7 @@ enum class gfx_err {
 	CONFIG_ERROR,
 	BACKEND_ERROR,
 	NULL_ERROR,
+	OUT_OF_RANGE,
 	UNKNOWN
 };
 

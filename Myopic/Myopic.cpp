@@ -63,15 +63,30 @@ void read_input() {
 
 
 resource_ptr<Model> mod;
+resource_ptr<Model> paimon;
 void load(AssetManager& assets) {
 
 
-	//assets.LoadModel("paimon");
+	paimon = assets.LoadModel("paimon");
 	//std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	mod = assets.LoadModel("2B_Rip_v1_6_R");
 }
 
 bool keys[SDL_SCANCODE_COUNT];
+
+
+inline XMFLOAT4X4* __vectorcall Transform(XMFLOAT4X4* dest, vector3_t position, vector3_t rotation, vector3_t scale, bool fix_z_up = true) noexcept {
+
+	
+	XMMATRIX xmm = ::XMMatrixAffineTransformation(::XMLoadFloat3(&scale), ::XMVectorSet(0, 0, 0, 0), ::XMQuaternionRotationRollPitchYawFromVector(::XMLoadFloat3(&rotation)), ::XMLoadFloat3(&position));
+	if (fix_z_up) {
+		xmm = ::XMMatrixRotationX(XM_PIDIV2) * xmm;
+	}
+	::XMStoreFloat4x4(dest, xmm);
+
+	return dest;
+	//XMMATRIX xmm = ::XMMatrixRotationX(XM_PIDIV2) * ::XMMatrixRotationY(0) * DirectX::XMMatrixScaling(5, 5, 5) * DirectX::XMMatrixTranslation(0, -5, 10);
+}
 
 int game(Graphics& gfx, AssetManager& assets) {
 
@@ -93,25 +108,6 @@ int game(Graphics& gfx, AssetManager& assets) {
 #define FPS_AVG_COUNT 100
 	double fps_avg[FPS_AVG_COUNT] = { 0 };
 	int fps_avg_ptr = 0;
-
-	Icosphere sphere(4);
-	
-	auto& sphereVerts = sphere.verts();
-	auto& sphereIndices = sphere.inds();
-
-	Mesh moon(1);
-
-
-	gfx.CreateSubMesh(moon.Get(0), sphereVerts, 3 * sizeof(float), sphereIndices);
-	auto moonMat = assets.CreateMaterial("moon_mat", MaterialDef{
-		.shader = "basic",
-		.texture = "moon/lroc_color_2k.png",
-		.colour = {1,1,1,1},
-		.fresnelRange = {1,1,1},
-
-		});
-
-	Model moonModel(resource_ptr<Mesh>(&moon), std::vector<resource_ptr<Material>>{moonMat});
 
 
 	while (!should_quit) {
@@ -249,7 +245,7 @@ int game(Graphics& gfx, AssetManager& assets) {
 
 				break;
 			case SDL_EVENT_MOUSE_MOTION:
-				gfx.GetCamera().Rotate(e.motion.xrel * 0.002f, -e.motion.yrel * 0.002f);
+				gfx.GetCamera().Rotate(-e.motion.xrel * 0.002f, e.motion.yrel * 0.002f);
 				
 				break;
 			default:
@@ -282,7 +278,7 @@ int game(Graphics& gfx, AssetManager& assets) {
 			Camera& cam = gfx.GetCamera();
 
 			XMFLOAT3 right = cam.Right();
-			XMVECTOR vec = speed * -delta * XMLoadFloat3(&right);
+			XMVECTOR vec = speed * delta * XMLoadFloat3(&right);
 			::XMStoreFloat3(&right, vec);
 			cam.Move(right);
 			//std::cout << cam.Position().x << ", " << cam.Position().y << ", " << cam.Position().z << std::endl;
@@ -291,7 +287,7 @@ int game(Graphics& gfx, AssetManager& assets) {
 			Camera& cam = gfx.GetCamera();
 
 			XMFLOAT3 right = cam.Right();
-			XMVECTOR vec = speed * delta * XMLoadFloat3(&right);
+			XMVECTOR vec = speed * -delta * XMLoadFloat3(&right);
 			::XMStoreFloat3(&right, vec);
 			cam.Move(right);
 			//std::cout << cam.Position().x << ", " << cam.Position().y << ", " << cam.Position().z << std::endl;
@@ -324,13 +320,15 @@ int game(Graphics& gfx, AssetManager& assets) {
 		heavy_rot += (float)delta;
 
 		XMFLOAT4X4 transform;
-		XMMATRIX xmm = ::XMMatrixRotationX(XM_PIDIV2) * ::XMMatrixRotationY(0) * DirectX::XMMatrixScaling(5, 5, 5) * DirectX::XMMatrixTranslation(0, -5, 10);
+		//XMMATRIX xmm = ::XMMatrixRotationX(XM_PIDIV2) * ::XMMatrixRotationY(0) * DirectX::XMMatrixScaling(5, 5, 5) * DirectX::XMMatrixTranslation(0, -5, 10);
 
-		//store the model matrix in the correct spot
-		DirectX::XMStoreFloat4x4(
-			&transform,
-			XMMatrixTranspose(xmm)
-		);
+		////store the model matrix in the correct spot
+		//DirectX::XMStoreFloat4x4(
+		//	&transform,
+		//	xmm
+		//);
+
+		Transform(&transform, { 0, -5, 10 }, { 0, 0, 0 }, { 5,5,5 });
 
 		gfx.RenderModel(mod.get(), transform);
 
@@ -357,6 +355,7 @@ int myopic() {
 
 	game(gfx, assets);
 
+	paimon.reset();
 	mod.reset();
 
 	gfx.Destroy();

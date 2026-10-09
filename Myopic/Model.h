@@ -14,20 +14,49 @@ class Model : public IResource
 public:
 	static constexpr size_t MAX_MATERIALS = 10;
 
-	Model(const std::vector<Mesh*>& meshes, const std::vector<Material*>& materialsvec) : meshes(meshes), material_count(materialsvec.size()) {
-		if (materialsvec.size() > MAX_MATERIALS) {
-			throw std::exception();
-		}
-		for (size_t i = 0; i < materialsvec.size(); i++)
+	Model(){}
+
+	//release references on destroy
+	~Model() {
+		for (auto m : mMeshes)
 		{
-			materials[i] = materialsvec[i];
+			m->release();
+		}
+
+		for (size_t i = 0; i < mMaterialCount; i++)
+		{
+			mMaterials[i]->release();
 		}
 	}
 
+	gfx_err Create(const std::vector<Mesh*>& meshes, const std::vector<Material*>& materials){
+		if (materials.size() > MAX_MATERIALS) {
+			return gfx_err::OUT_OF_RANGE;
+		}
+		mMaterialCount = materials.size();
+
+		mMeshes.resize(meshes.size());
+
+		//make sure we add appropriate meshes
+		for (size_t i = 0; i < meshes.size(); i++)
+		{
+			mMeshes[i] = meshes[i];
+			mMeshes[i]->addref();
+		}
+
+		for (size_t i = 0; i < materials.size(); i++)
+		{
+			mMaterials[i] = materials[i];
+			mMaterials[i]->addref();
+		}
+		_initialised = true;
+		return gfx_err::OK;
+	}
+
 private:
-	std::vector<Mesh*> meshes;
-	std::array<resource_ptr<Material>, MAX_MATERIALS> materials;
-	size_t material_count;
+	std::vector<Mesh*> mMeshes;
+	std::array<Material*, MAX_MATERIALS> mMaterials{};
+	size_t mMaterialCount = 0;
 
 };
 

@@ -15,8 +15,14 @@ public:
 
 	//helper func for allocating type
 	template<typename T>
-	inline T* alloc() {
-		return (T*)alloc(sizeof(T));
+	inline T* alloc_object() {
+		return new (alloc(sizeof(T))) T(); //create with placement new
+	}
+
+	template<typename T>
+	inline void dealloc_object(T* obj) {
+		obj->~T(); //manually call destructor
+		dealloc(obj);
 	}
 
 	void* alloc(size_t bytes);
@@ -99,57 +105,5 @@ private:
 	size_t mSize;
 	Marker mBottom;
 	Marker mTop;
-};
-
-
-
-
-
-
-
-
-
-
-class MemoryPool {
-public:
-	MemoryPool() {
-
-	}
-	~MemoryPool() {
-		while (head) {
-			Block* block = head;
-			head = head->next;
-
-		}
-	}
-
-	void* alloc() {
-		if (free_element) {
-			void* mem = free_element;
-			free_element = free_element->next_element;
-			return mem;
-		}
-
-	}
-	void dealloc() {
-
-	}
-
-private:
-
-	struct Block {
-		Block* next;
-		char* mem;
-	};
-
-	struct FreeElement {
-		FreeElement* next_element;
-	};
-
-
-	FreeElement* free_element;
-	Block* head;
-	size_t block_size;
-	size_t num_block_elements;
 };
 

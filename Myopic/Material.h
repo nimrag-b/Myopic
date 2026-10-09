@@ -25,20 +25,20 @@ class Material : public IResource
 public:
 
 	Material(DirectX::XMFLOAT4 meshColour, float specular, DirectX::XMFLOAT3 fresnelRange, Shader* shader, Texture* diffuse, Texture* normal) :
-		meshColour(meshColour),
-		specular(specular),
-		fresnelRange(fresnelRange),
-		shader(shader),
-		texture(diffuse),
-		normal(normal)
+		mMeshColour(meshColour),
+		mSpecular(specular),
+		mFresnelRange(fresnelRange),
+		mShader(shader),
+		mTexture(diffuse),
+		mNormal(normal)
 	{ 
+		_initialised = true; //material always initialised
 	}
-	//void Use(ID3D11DeviceContext* context, ObjectDataBuffer* data);
 
-	const DirectX::XMFLOAT4 meshColour;
-	const float specular;
-	const DirectX::XMFLOAT3 fresnelRange;
-	const resource_ptr<Shader> const shader;
-	const resource_ptr<Texture> const texture; //resource view into texture
-	const resource_ptr<Texture> const normal; //resource view into texture
+	const DirectX::XMFLOAT4 mMeshColour;
+	const float mSpecular;
+	const DirectX::XMFLOAT3 mFresnelRange;
+	const resource_ptr<Shader> const mShader;
+	const resource_ptr<Texture> const mTexture; //resource view into texture
+	const resource_ptr<Texture> const mNormal; //resource view into texture
 };
