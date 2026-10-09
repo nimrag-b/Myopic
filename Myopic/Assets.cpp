@@ -24,7 +24,7 @@ public:
 };
 
 
-void Assets::CreateShader(const std::string& tag, const ResourceLocation& vertex, const ResourceLocation& fragment, VertexLayout* layout)
+void AssetLoader::CreateShader(const std::string& tag, const ResourceLocation& vertex, const ResourceLocation& fragment, VertexLayout* layout)
 {
 	std::string vres = vertex.ToString();
 	std::string pres = fragment.ToString();
@@ -49,7 +49,7 @@ void Assets::CreateShader(const std::string& tag, const ResourceLocation& vertex
 	Register(tag, gfx.DXCreateShader(vs, ps, *layout));
 }
 
-void Assets::LoadTexture(const ResourceLocation& tag) {
+void AssetLoader::LoadTexture(const ResourceLocation& tag) {
 
 	std::string path = tag.Filepath("textures");
 
@@ -75,7 +75,7 @@ void Assets::LoadTexture(const ResourceLocation& tag) {
 	Register(tag.ToString(), std::move(tex));
 }
 
-void Assets::LoadCubemap(const ResourceLocation& tag) {
+void AssetLoader::LoadCubemap(const ResourceLocation& tag) {
 
 	std::string pathBase = tag.Filepath("textures");
 
@@ -131,7 +131,7 @@ void Assets::LoadCubemap(const ResourceLocation& tag) {
 	Register(tag.ToString(), std::move(tex));
 }
 
-resource_ptr<Texture> Assets::GetOrCreateTexture(const ResourceLocation& tag)
+resource_ptr<Texture> AssetLoader::GetOrCreateTexture(const ResourceLocation& tag)
 {
 	std::string name = tag.ToString();
 	auto& reg = GetRegistry<Texture>();
@@ -148,7 +148,7 @@ resource_ptr<Texture> Assets::GetOrCreateTexture(const ResourceLocation& tag)
 
 }
 
-resource_ptr<Mesh> Assets::GetOrCreateMesh(const ResourceLocation& tag)
+resource_ptr<Mesh> AssetLoader::GetOrCreateMesh(const ResourceLocation& tag)
 {
 	std::string name = tag.ToString();
 	auto& reg = GetRegistry<Mesh>();
@@ -242,7 +242,7 @@ struct mesh_part {
 
 
 
-std::unique_ptr<Model> Assets::LoadModel(const ResourceLocation& tag)
+std::unique_ptr<Model> AssetLoader::LoadModel(const ResourceLocation& tag)
 {
 	auto startClock = std::chrono::high_resolution_clock::now();
 
@@ -454,7 +454,7 @@ std::unique_ptr<Model> Assets::LoadModel(const ResourceLocation& tag)
 	return std::make_unique<Model>(mesh_res,mats);
 }
 
-resource_ptr<Material> Assets::CreateMaterial(const ResourceLocation& name, const MaterialDef& def)
+resource_ptr<Material> AssetLoader::CreateMaterial(const ResourceLocation& name, const MaterialDef& def)
 {
 	if (materials.contains(name.ToString())) {
 		throw load_error("Cannot create material '" + name.ToString() + "' as a material with the same name already exists");
@@ -480,7 +480,7 @@ resource_ptr<Material> Assets::CreateMaterial(const ResourceLocation& name, cons
 	return materials.insert( name.ToString(), std::make_unique<Material>(def.colour, def.specular, def.fresnelRange, shader.get(), tex.get(), normal.get()));
 }
 
-void Assets::RemoveUnreferenced()
+void AssetLoader::RemoveUnreferenced()
 {
 	materials.remove_unreferenced();
 	meshes.remove_unreferenced();
@@ -530,10 +530,13 @@ std::vector<uint8_t> generate_missing_tex() {
 
 
 
-void Assets::CreateDefaults()
+void AssetLoader::CreateDefaults()
 {
+	static VertexLayout Basiclayout{
+	{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0},
+	};
 
-	VertexLayout UIlayout{
+	static VertexLayout UIlayout{
 		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(GUIVertex, position), D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(GUIVertex, texCoord), D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
@@ -555,7 +558,7 @@ void Assets::CreateDefaults()
 
 	Register("myopic:standard_lit", gfx.LoadShader("shaders/Main.vs.cso", "shaders/Main.ps.cso", nullptr)).get()->set_intrinsic(true);
 
-
+	Register("myopic:basic", gfx.LoadShader("shaders/Basic.vs.cso", "shaders/Basic.ps.cso", &Basiclayout)).get()->set_intrinsic(true);
 
 	//textures
 	auto missing_tex_raw = generate_missing_tex();

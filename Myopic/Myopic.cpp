@@ -14,6 +14,8 @@
 #include <thread>
 #include <sstream>
 
+#include "Icosphere.h"
+
 bool should_quit = false;
 
 int avg_fps_v = 0;
@@ -61,7 +63,7 @@ void read_input() {
 
 
 std::unique_ptr<Model> mod;
-void load(Assets& assets) {
+void load(AssetLoader& assets) {
 
 
 	assets.LoadModel("paimon");
@@ -71,7 +73,7 @@ void load(Assets& assets) {
 
 bool keys[SDL_SCANCODE_COUNT];
 
-int game(Graphics& gfx, Assets& assets) {
+int game(Graphics& gfx, AssetLoader& assets) {
 
 	assets.LoadCubemap("SkyboxBasic");
 
@@ -94,6 +96,25 @@ int game(Graphics& gfx, Assets& assets) {
 #define FPS_AVG_COUNT 100
 	double fps_avg[FPS_AVG_COUNT] = { 0 };
 	int fps_avg_ptr = 0;
+
+	Icosphere sphere(4);
+	
+	auto& sphereVerts = sphere.verts();
+	auto& sphereIndices = sphere.inds();
+
+	Mesh moon(1);
+
+
+	gfx.CreateSubMesh(moon.Get(0), sphereVerts, 3 * sizeof(float), sphereIndices);
+	auto moonMat = assets.CreateMaterial("moon_mat", MaterialDef{
+		.shader = "basic",
+		.texture = "moon/lroc_color_2k.png",
+		.colour = {1,1,1,1},
+		.fresnelRange = {1,1,1},
+
+		});
+
+	Model moonModel(resource_ptr<Mesh>(&moon), std::vector<resource_ptr<Material>>{moonMat});
 
 
 	while (!should_quit) {
@@ -239,14 +260,14 @@ int game(Graphics& gfx, Assets& assets) {
 			}
 		}
 
-
+		float speed = 15;
 		if (keys[SDL_SCANCODE_W]) {
 
 			Camera& cam = gfx.GetCamera();
 
 			XMFLOAT3 forward = cam.Forward();
-			XMVECTOR vec = 50 * delta * XMLoadFloat3(&forward);
-			XMStoreFloat3(&forward, vec);
+			XMVECTOR vec = speed * delta * XMLoadFloat3(&forward);
+			::XMStoreFloat3(&forward, vec);
 			cam.Move(forward);
 			//std::cout << cam.Position().x << ", " << cam.Position().y << ", " << cam.Position().z << std::endl;
 		}
@@ -254,8 +275,8 @@ int game(Graphics& gfx, Assets& assets) {
 			Camera& cam = gfx.GetCamera();
 
 			XMFLOAT3 forward = cam.Forward();
-			XMVECTOR vec = 50 * -delta * XMLoadFloat3(&forward);
-			XMStoreFloat3(&forward, vec);
+			XMVECTOR vec = speed * -delta * XMLoadFloat3(&forward);
+			::XMStoreFloat3(&forward, vec);
 			cam.Move(forward);
 			//std::cout << cam.Position().x << ", " << cam.Position().y << ", " << cam.Position().z << std::endl;
 		}
@@ -264,8 +285,8 @@ int game(Graphics& gfx, Assets& assets) {
 			Camera& cam = gfx.GetCamera();
 
 			XMFLOAT3 right = cam.Right();
-			XMVECTOR vec = 50 * -delta * XMLoadFloat3(&right);
-			XMStoreFloat3(&right, vec);
+			XMVECTOR vec = speed * -delta * XMLoadFloat3(&right);
+			::XMStoreFloat3(&right, vec);
 			cam.Move(right);
 			//std::cout << cam.Position().x << ", " << cam.Position().y << ", " << cam.Position().z << std::endl;
 		}
@@ -273,8 +294,8 @@ int game(Graphics& gfx, Assets& assets) {
 			Camera& cam = gfx.GetCamera();
 
 			XMFLOAT3 right = cam.Right();
-			XMVECTOR vec = 50 * delta * XMLoadFloat3(&right);
-			XMStoreFloat3(&right, vec);
+			XMVECTOR vec = speed * delta * XMLoadFloat3(&right);
+			::XMStoreFloat3(&right, vec);
 			cam.Move(right);
 			//std::cout << cam.Position().x << ", " << cam.Position().y << ", " << cam.Position().z << std::endl;
 		}
@@ -282,12 +303,12 @@ int game(Graphics& gfx, Assets& assets) {
 
 		XMFLOAT3 sunPos = { 1,0,0 };
 		XMFLOAT3 axis = { 0,0,1 };
-		XMStoreFloat3(&sunPos, XMVector3Rotate(XMLoadFloat3(&sunPos), XMQuaternionRotationAxis(XMLoadFloat3(&axis), heavy_rot)));
+		::XMStoreFloat3(&sunPos, XMVector3Rotate(XMLoadFloat3(&sunPos), XMQuaternionRotationAxis(XMLoadFloat3(&axis), heavy_rot)));
 
 		XMFLOAT3 day = { 1.0f, 0.9f, 0.9f };
 		XMFLOAT3 night = { 49 / 255.0f, 49 / 255.0f, 163 / 255.0f };
 		XMFLOAT3 res;
-		XMStoreFloat3(&res, XMVectorLerp(XMLoadFloat3(&day), XMLoadFloat3(&night), (sunPos.x + 1)/2.0f));
+		::XMStoreFloat3(&res, XMVectorLerp(XMLoadFloat3(&day), XMLoadFloat3(&night), (sunPos.x + 1)/2.0f));
 
 		gfx.UpdateSun(sunPos, res);
 
@@ -329,7 +350,7 @@ int myopic() {
 
 	Graphics gfx;
 	gfx.Initialise();
-	Assets assets(gfx);
+	AssetLoader assets(gfx);
 
 	std::thread load_thread(load, std::ref(assets));
 

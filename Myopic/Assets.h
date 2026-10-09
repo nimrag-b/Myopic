@@ -4,14 +4,14 @@
 #include "ResourceLocation.h"
 
 
-class Assets
+class AssetLoader
 {
 public:
-	Assets(Graphics& gfx) : gfx(gfx) {
+	AssetLoader(Graphics& gfx) : gfx(gfx) {
 		CreateDefaults();
 	}
 
-	~Assets() {
+	~AssetLoader() {
 		//must be done in the right order to avoid dangling pointers (ie materials reference both textures and shaders so much be cleared first);
 		materials.clear();
 		textures.clear();

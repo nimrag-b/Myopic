@@ -21,8 +21,8 @@ PSInput main(VSInput input)
     rotview[3][1] = 0;
     rotview[3][2] = 0;
     
-    output.texCoord = input.pos;
-    output.pos = float4(input.pos, 1);
+    output.texCoord = input.pos.xzy; //flip triangle winding
+    output.pos = float4(input.pos.xzy, 1);
     output.pos = mul(output.pos, rotview);
     output.pos = mul(output.pos, projection);
 	return output;

@@ -1,7 +1,7 @@
 struct PSInput
 {
     float4 position : SV_Position;
-    float3 color : COLOR0;
+    float2 texCoord : TEXCOORD;
 };
 
 struct PSOutput
@@ -16,7 +16,7 @@ SamplerState MeshTextureSampler : register(s0);
 
 PSOutput main(PSInput input)
 {
-    PSOutput output = (PSOutput) 0;
-    output.color = float4(input.color, 1.0);
+    PSOutput output;
+    output.color = meshTexture.Sample(MeshTextureSampler, input.texCoord); //float4(input.texCoord,1,1);
     return output;
 }
