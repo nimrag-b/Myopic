@@ -43,13 +43,12 @@ public:
 	gfx_err SetShader(const Shader* shader);
 	gfx_err SetMaterial(const Material* material);
 	gfx_err UpdateObjectProps(const Material* material, ObjectDataBuffer& buffer);
-	gfx_err RenderMesh(const SubMesh* mesh);
+	gfx_err RenderMesh(const Mesh* mesh);
 
 	gfx_err RenderModel(const Model* model, ::XMFLOAT4X4& transform);
 
 	gfx_err RenderSkybox(const Texture* cubemap);
-
-	std::unique_ptr<Shader> LoadShader(const std::string& vertex, const std::string& fragment, VertexLayout* layout);
+	gfx_err LoadShader(Shader* pShader, const std::string& vertex, const std::string& fragment, VertexLayout* layout);
 
 	void UpdateSun(::XMFLOAT3 direction, ::XMFLOAT3 colour);
 
@@ -63,16 +62,19 @@ public:
 	void DisableAlphaBlend();
 
 
-	std::unique_ptr<Texture> DXCreateTexture(void* pixels, int width, int height, int pitch, DXGI_FORMAT format);
-	std::unique_ptr<Texture> DXCreateCubemap(void* pixels[6], int width, int height, int pitch, DXGI_FORMAT format);
+	void CreateMesh(Mesh* mesh, std::vector<float>& vertices, size_t vertex_size_bytes, std::vector<uint32_t>& indices, size_t material_index = 0);
 
-	std::unique_ptr<Shader> DXCreateShader(ComPtr<ID3D11VertexShader> vertex, ComPtr<ID3D11PixelShader> pixel, const VertexLayout& layout);
+
+	gfx_err DXCreateTexture(Texture* pTex, void* pixels, int width, int height, int pitch, DXGI_FORMAT format);
+	gfx_err DXCreateCubemap(Texture* pTex, void* pixels[6], int width, int height, int pitch, DXGI_FORMAT format);
+
+	gfx_err DXCreateShader(Shader* pShader, ComPtr<ID3D11VertexShader> vertex, ComPtr<ID3D11PixelShader> pixel, const VertexLayout& layout);
+
+
 	ComPtr<ID3D11VertexShader> DXCreateGVertexVertexShader(const std::wstring& fileName);
 	ComPtr<ID3D11VertexShader> DXCreateVertexShader(const std::wstring& fileName, VertexLayout* layout);
 	ComPtr<ID3D11PixelShader> DXCreatePixelShader(const std::wstring& fileName);
 
-
-	void CreateSubMesh(SubMesh& mesh, std::vector<float>& vertices, size_t vertex_size_bytes, std::vector<uint32_t>& indices, size_t material_index = 0);
 
 	bool GetFullscreen() {
 		BOOL fullscreen;
@@ -135,13 +137,12 @@ private:
 
 	//Skybox Data
 	size_t d3dSkyboxCount = 0;
-	SubMesh d3dSkyDome;
+	Mesh d3dSkyDome;
 	ComPtr<ID3D11Buffer> d3dSkyboxMesh = nullptr;
 	std::unique_ptr<Shader> skyboxShader = nullptr;
 	VertexLayout d3dSkyboxLayout{ { { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 } } };
 
 	//Render state
-	VertexLayout d3dGvertexLayout{ GVertexLayout };
 	const VertexLayout* currentVertexLayout = nullptr;
 	D3D11_VIEWPORT d3dViewport{ 0,0,0,0 };
 	ConstantDataBuffer constantDataBuffer;

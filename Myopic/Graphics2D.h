@@ -19,8 +19,6 @@ public:
 	gfx_err Render();
 private:
 
-
-
 	ComPtr<IDXGISurface> d3dTarget = nullptr; //shared with d3d, do NOT edit here!!!
 	ComPtr<ID2D1Factory1> d2dFactory = nullptr;
 	ComPtr<ID2D1Device> d2dDevice = nullptr;

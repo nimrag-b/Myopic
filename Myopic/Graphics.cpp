@@ -338,7 +338,7 @@ gfx_err Graphics::CreateSkyboxResources() {
 	auto& skydomeVerts = sphere.verts();
 	auto& skydomeIndices = sphere.inds();
 
-	CreateSubMesh(d3dSkyDome, skydomeVerts, 3 * sizeof(float), skydomeIndices);
+	CreateMesh(&d3dSkyDome, skydomeVerts, 3 * sizeof(float), skydomeIndices);
 
 
 	//create vertex buffer
@@ -356,9 +356,10 @@ gfx_err Graphics::CreateSkyboxResources() {
 	err::ThrowOnFail(
 		d3dDevice->CreateBuffer(&bd, &initData, d3dSkyboxMesh.ReleaseAndGetAddressOf())
 	);
+	Shader* shader = new Shader;
 
-	skyboxShader = LoadShader("shaders/Cubemap.vs.cso", "shaders/Cubemap.ps.cso", &d3dSkyboxLayout);
-
+	LoadShader(shader, "shaders/Cubemap.vs.cso", "shaders/Cubemap.ps.cso", &d3dSkyboxLayout);
+	skyboxShader = std::unique_ptr<Shader>(shader);
 	return gfx_err::OK;
 }
 
@@ -490,7 +491,7 @@ void Graphics::DisableAlphaBlend()
 
 
 
-std::unique_ptr<Texture> Graphics::DXCreateTexture(void* pixels, int width, int height, int pitch, DXGI_FORMAT format)
+gfx_err Graphics::DXCreateTexture(Texture* pTex, void* pixels, int width, int height, int pitch, DXGI_FORMAT format)
 {
 	CD3D11_TEXTURE2D_DESC texDesc(
 		format,//DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM,
@@ -506,10 +507,12 @@ std::unique_ptr<Texture> Graphics::DXCreateTexture(void* pixels, int width, int 
 	initialData.SysMemPitch = pitch;
 	initialData.SysMemSlicePitch = 0;
 
-	return std::unique_ptr<Texture>(new Texture(d3dDevice.Get(),&texDesc, &initialData, TextureType::NORMAL));
+	new (pTex) Texture(d3dDevice.Get(), &texDesc, &initialData, TextureType::NORMAL);
+
+	return gfx_err::OK;
 }
 
-std::unique_ptr<Texture> Graphics::DXCreateCubemap(void* pixels[6], int width, int height, int pitch, DXGI_FORMAT format)
+gfx_err Graphics::DXCreateCubemap(Texture* pTex, void* pixels[6], int width, int height, int pitch, DXGI_FORMAT format)
 {
 	//stolen from https://www.hlsl.co.uk/blog/2014/11/19/creating-a-cubemap-in-dx11
 	D3D11_TEXTURE2D_DESC texDesc;
@@ -538,8 +541,9 @@ std::unique_ptr<Texture> Graphics::DXCreateCubemap(void* pixels[6], int width, i
 		initialData[i].SysMemSlicePitch = 0;
 	}
 
+	new (pTex) Texture(d3dDevice.Get(), &texDesc, initialData, TextureType::CUBEMAP);
 
-	return std::unique_ptr<Texture>(new Texture(d3dDevice.Get(), &texDesc, initialData, TextureType::CUBEMAP));
+	return gfx_err::OK;
 }
 
 
@@ -572,7 +576,7 @@ gfx_err Graphics::UpdateObjectProps(const Material* material, ObjectDataBuffer& 
 	return gfx_err::OK;
 }
 
-gfx_err Graphics::RenderMesh(const SubMesh* mesh) {
+gfx_err Graphics::RenderMesh(const Mesh* mesh) {
 	if (mesh == nullptr) return gfx_err::NULL_ERROR;
 
 	UINT stride = static_cast<UINT>(mesh->stride);
@@ -596,15 +600,13 @@ gfx_err Graphics::RenderModel(const Model* model, ::XMFLOAT4X4& transform)
 	ObjectDataBuffer odb;
 	odb.worldMatrix = transform;
 
-	Mesh* mesh = model->mesh.get();
-
-	for (auto& it : mesh->subMeshes)
+	for (auto& it : model->meshes)
 	{
-		if (it.materialIndex >= model->material_count) {
+		if (it->materialIndex >= model->material_count) {
 			return gfx_err::CONFIG_ERROR;
 		}
 
-		Material* mat = model->materials[it.materialIndex].get();
+		Material* mat = model->materials[it->materialIndex].get();
 
 		SetMaterial(mat);
 		UpdateObjectProps(mat, odb);
@@ -613,7 +615,7 @@ gfx_err Graphics::RenderModel(const Model* model, ::XMFLOAT4X4& transform)
 		SetTexture(mat->texture.get(), 0);
 		SetTexture(mat->normal.get(), 1);
 
-		RenderMesh(&it);
+		RenderMesh(it);
 	}
 
 	return gfx_err::OK;
@@ -650,11 +652,10 @@ gfx_err Graphics::RenderSkybox(const Texture* cubemap)
 }
 
 
-std::unique_ptr<Shader> Graphics::LoadShader(const std::string& vertex, const std::string& fragment, VertexLayout* layout) {
-
+gfx_err Graphics::LoadShader(Shader* pShader, const std::string& vertex, const std::string& fragment, VertexLayout* layout) {
 
 	if (layout == nullptr) {
-		layout = &d3dGvertexLayout;
+		layout = &sGvertexLayout;
 	}
 
 	const std::wstring wvert = std::wstring(vertex.begin(), vertex.end());
@@ -663,8 +664,9 @@ std::unique_ptr<Shader> Graphics::LoadShader(const std::string& vertex, const st
 	const std::wstring wpix = std::wstring(fragment.begin(), fragment.end());
 	ComPtr<ID3D11PixelShader> ps = DXCreatePixelShader(wpix);
 
-	return DXCreateShader(vs, ps, *layout);
+	return DXCreateShader(pShader, vs, ps, *layout);
 }
+
 
 void Graphics::UpdateSun(::XMFLOAT3 direction, ::XMFLOAT3 colour)
 {
@@ -675,10 +677,11 @@ void Graphics::UpdateSun(::XMFLOAT3 direction, ::XMFLOAT3 colour)
 	d3dDeviceContext->UpdateSubresource(d3dConstantDataBuffer.Get(), 0, nullptr, &constantDataBuffer, 0, 0);
 }
 
-std::unique_ptr<Shader> Graphics::DXCreateShader(ComPtr<ID3D11VertexShader> vertex, ComPtr<ID3D11PixelShader> pixel, const VertexLayout& layout)
+gfx_err Graphics::DXCreateShader(Shader* pShader, ComPtr<ID3D11VertexShader> vertex, ComPtr<ID3D11PixelShader> pixel, const VertexLayout& layout)
 {
-	Shader* shader = new Shader(pixel, vertex, layout);
-	return std::unique_ptr<Shader>(shader);
+	//placement new construct
+	new (pShader) Shader(pixel, vertex, &layout);
+	return gfx_err::OK;
 }
 
 bool Graphics::DXCompileShader(const std::wstring& fileName, const std::string& entryPoint, const std::string& profile, ComPtr<ID3DBlob>& shaderBlob)
@@ -724,7 +727,7 @@ bool Graphics::DXCompileShader(const std::wstring& fileName, const std::string& 
 
 ComPtr<ID3D11VertexShader> Graphics::DXCreateGVertexVertexShader(const std::wstring& fileName)
 {
-	return DXCreateVertexShader(fileName, &d3dGvertexLayout);
+	return DXCreateVertexShader(fileName, &sGvertexLayout);
 }
 
 ComPtr<ID3D11VertexShader> Graphics::DXCreateVertexShader(const std::wstring& fileName, VertexLayout* layout)
@@ -791,12 +794,13 @@ ComPtr<ID3D11PixelShader> Graphics::DXCreatePixelShader(const std::wstring& file
 }
 
 
-void Graphics::CreateSubMesh(SubMesh& mesh, std::vector<float>& vertices, size_t vertex_size_bytes, std::vector<uint32_t>& indices, size_t material_index)
+void Graphics::CreateMesh(Mesh* mesh, std::vector<float>& vertices, size_t vertex_size_bytes, std::vector<uint32_t>& indices, size_t material_index)
 {
+	new (mesh) Mesh();
 	//create vertex buffer
 
-	mesh.vertexCount = (vertices.size() * sizeof(float)) / vertex_size_bytes;
-	mesh.stride = vertex_size_bytes;
+	mesh->vertexCount = (vertices.size() * sizeof(float)) / vertex_size_bytes;
+	mesh->stride = vertex_size_bytes;
 
 	D3D11_BUFFER_DESC bd = { 0 };
 	D3D11_SUBRESOURCE_DATA initData = { 0 };
@@ -809,12 +813,12 @@ void Graphics::CreateSubMesh(SubMesh& mesh, std::vector<float>& vertices, size_t
 	initData.pSysMem = vertices.data(); //attach data
 
 	err::ThrowOnFail(
-		d3dDevice->CreateBuffer(&bd, &initData, mesh.d3dVertexBuffer.ReleaseAndGetAddressOf())
+		d3dDevice->CreateBuffer(&bd, &initData, mesh->d3dVertexBuffer.ReleaseAndGetAddressOf())
 	);
 
 	//create index buffer
 
-	mesh.indexCount = indices.size();
+	mesh->indexCount = indices.size();
 
 	bd = { 0 };
 	initData = { 0 };
@@ -826,12 +830,12 @@ void Graphics::CreateSubMesh(SubMesh& mesh, std::vector<float>& vertices, size_t
 	initData.pSysMem = indices.data();
 
 	err::ThrowOnFail(
-		d3dDevice->CreateBuffer(&bd, &initData, mesh.d3dIndexBuffer.ReleaseAndGetAddressOf())
+		d3dDevice->CreateBuffer(&bd, &initData, mesh->d3dIndexBuffer.ReleaseAndGetAddressOf())
 	);
 
 
 	//assign extra data
-	mesh.materialIndex = material_index;
+	mesh->materialIndex = material_index;
 
 }
 
