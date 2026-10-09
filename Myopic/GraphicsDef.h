@@ -175,7 +175,7 @@ static D3D11_INPUT_ELEMENT_DESC GVertexLayout[] =
 	//{"BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(GVertex, binormal), D3D11_INPUT_PER_VERTEX_DATA, 0},
 };
 
-
+static VertexLayout sGvertexLayout{ GVertexLayout };
 
 
 

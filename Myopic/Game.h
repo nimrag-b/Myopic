@@ -1,4 +1,19 @@
 #pragma once
+
+class TextureManager {
+
+};
+class MeshManager {
+
+};
+class ShaderManager {
+
+};
+class ModelManager {
+
+};
+
+
 class Game
 {
 public:
@@ -14,8 +29,8 @@ public:
 	void Shutdown();
 
 	static Game& get() {
-		static Game gGame;
-		return gGame;
+		static Game sGame;
+		return sGame;
 	}
 private:
 

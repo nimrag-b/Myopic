@@ -11,6 +11,7 @@
 #include <cassert>
 
 
+
 typedef uint32_t RID; /* Resource ID*/
 
 constexpr RID NULL_RID = 0;
@@ -126,10 +127,12 @@ public:
 		return *this;
 	}
 
-	resource_ptr& operator=(const resource_ptr&& other) noexcept {
+	resource_ptr& operator=(resource_ptr&& other) noexcept {
+
 		InternalRelease();
 		ptr = other.ptr;
 		InternalAddRef();
+		other.InternalRelease();
 		return *this;
 	}
 

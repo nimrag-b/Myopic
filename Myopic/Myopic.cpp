@@ -62,28 +62,25 @@ void read_input() {
 }
 
 
-std::unique_ptr<Model> mod;
-void load(AssetLoader& assets) {
+resource_ptr<Model> mod;
+void load(AssetManager& assets) {
 
 
-	assets.LoadModel("paimon");
+	//assets.LoadModel("paimon");
 	//std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	mod = assets.LoadModel("2B_Rip_v1_6_R");
 }
 
 bool keys[SDL_SCANCODE_COUNT];
 
-int game(Graphics& gfx, AssetLoader& assets) {
+int game(Graphics& gfx, AssetManager& assets) {
 
-	assets.LoadCubemap("SkyboxBasic");
 
-	auto texCube = assets.GetOrCreateTexture("SkyboxBasic");
+	resource_ptr<Texture> texCube = assets.LoadCubemap("SkyboxBasic");
+	//assets.RemoveUnreferenced();
 
-	assets.RemoveUnreferenced();
 
 	float heavy_rot = 0;
-
-
 
 
 	Uint64 LAST = SDL_GetTicksNS();
@@ -350,7 +347,9 @@ int myopic() {
 
 	Graphics gfx;
 	gfx.Initialise();
-	AssetLoader assets(gfx);
+	AssetManager assets(gfx);
+
+	//assets.mLoadMode = AssetManager::LoadMode::Allow;
 
 	std::thread load_thread(load, std::ref(assets));
 
