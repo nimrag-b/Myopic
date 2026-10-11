@@ -5,7 +5,12 @@
 class ResourceLocation {
 public:
 
-	ResourceLocation(nullptr_t) : _path(), _namespace() {
+
+	static constexpr const char DefaultNameSpace[] = "myopic";
+	static constexpr const char ErrorLocation[] = "error/error";
+
+
+	ResourceLocation(nullptr_t) : mString() {
 
 	}
 
@@ -20,52 +25,58 @@ public:
 		size_t n = path.find(':');
 
 		if (n == std::string::npos) {
-			_namespace = "myopic";
-			_path = path;
+			mString = std::string(DefaultNameSpace) + ':' + path;
+			n = sizeof(DefaultNameSpace);
 		}
 		else {
-			_namespace = path.substr(0, n);
-			_path = path.substr(n + 1);
+			mString = path;
 		}
 
-		if (_namespace.find_first_not_of("abcdefghijklmnopqrstuvwxyz") != std::string::npos) {
+		if (mString.substr(0,n-1).find_first_not_of("abcdefghijklmnopqrstuvwxyz") != std::string::npos) {
 			std::cout << "Invalid Namespace for path '" << path << "'" << std::endl;
 			SetError();
 			return;
 		}
 
 		//canonise filepaths
-		for (size_t i = 0; i < _path.size(); i++) {
-			if (_path[i] == '\\') {
-				_path[i] = '/';
+		for (size_t i = n+1; i < mString.size(); i++) {
+			if (mString[i] == '\\') {
+				mString[i] = '/';
 			}
 		}
 		
-		if (std::find_if(_path.begin(), _path.end(), [](int ch) {return !(isalnum(ch) || ch == '_' || ch == '.' || ch == '/'); }) != _path.end()) {
+		if (std::find_if(mString.begin() + n + 1, mString.end(), [](int ch) {return !(isalnum(ch) || ch == '_' || ch == '.' || ch == '/'); }) != mString.end()) {
 			std::cout << "Invalid Path for path '" << path << "'" << std::endl;
 			SetError();
 			return;
 		}
+
+		mPathPtr = n;
 	}
 
 	bool empty() const {
-		return _path.empty();
+		return mString.empty();
 	}
 
-	const std::string& GetNamespace() const {
-		return _namespace;
+	const std::string GetNamespace() const {
+		return mString.substr(0, mPathPtr - 1);
 	}
 
-	const std::string& GetPath() const {
-		return _path;
+	const std::string GetPath() const {
+		return mString.substr(mPathPtr);
 	}
 
-	const std::string ToString() const {
-		return _namespace + ':' + _path;
+	const std::string& Get() {
+		return mString;
 	}
+
+	const char* CStr() const {
+		return mString.c_str();
+	}
+
 
 	std::string Filepath(const std::string& subfolder, const std::string& ext = "") const {
-		std::string res = _namespace + '/' + subfolder + '/' + _path;
+		std::string res = mString.substr(0, mPathPtr - 1) + '/' + subfolder + '/' + mString.substr(mPathPtr);
 
 
 		res += ext;
@@ -75,10 +86,11 @@ public:
 private:
 
 	void SetError() {
-		_namespace = "myopic";
-		_path = "error.error";
+		mString = std::string(DefaultNameSpace) + ':' + std::string(ErrorLocation);
+		mPathPtr = sizeof(DefaultNameSpace);
 	}
 
-	std::string _namespace;
-	std::string _path;
+	std::string mString;
+	size_t mPathPtr;
+
 };

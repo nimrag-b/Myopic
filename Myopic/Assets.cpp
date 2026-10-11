@@ -106,7 +106,7 @@ Texture* AssetManager::LoadTexture(const ResourceLocation& tag)
 		return nullptr;
 	}
 
-	mTextures.insert(compute_string_hash(tag.ToString().c_str()), t);
+	mTextures.insert(compute_string_hash(tag.CStr()), t);
 
 	return t;
 }
@@ -114,6 +114,7 @@ Texture* AssetManager::LoadTexture(const ResourceLocation& tag)
 Texture* AssetManager::LoadCubemap(const ResourceLocation& tag) {
 
 	if (mLoadMode == LoadMode::Locked) return nullptr;
+	char str[512];
 
 	std::string pathBase = tag.Filepath("textures");
 
@@ -170,7 +171,7 @@ Texture* AssetManager::LoadCubemap(const ResourceLocation& tag) {
 		return nullptr;
 	}
 
-	mTextures.insert(compute_string_hash(tag.ToString().c_str()), t);
+	mTextures.insert(compute_string_hash(tag.CStr()), t);
 	return t;
 }
 
@@ -185,7 +186,7 @@ Material* AssetManager::LoadMaterial(const ResourceLocation& name, const Materia
 		tex = mTextures.get(sDefaultTexID);
 	}
 	else {
-		STR_ID texHash = compute_string_hash(def.texture.ToString().c_str());
+		STR_ID texHash = compute_string_hash(def.texture.CStr());
 		if (mTextures.contains(texHash)) {
 			tex = mTextures.get(texHash);
 		}
@@ -199,7 +200,7 @@ Material* AssetManager::LoadMaterial(const ResourceLocation& name, const Materia
 		normal = mTextures.get(sDefaultNormalID);
 	}
 	else {
-		STR_ID texHash = compute_string_hash(def.normal.ToString().c_str());
+		STR_ID texHash = compute_string_hash(def.normal.CStr());
 		if (mTextures.contains(texHash)) {
 			normal = mTextures.get(texHash);
 		}
@@ -208,12 +209,12 @@ Material* AssetManager::LoadMaterial(const ResourceLocation& name, const Materia
 		}
 	}
 	
-	Shader* shader = mShaders.get(compute_string_hash(def.shader.ToString().c_str()));
+	Shader* shader = mShaders.get(compute_string_hash(def.shader.CStr()));
 	
 	//cant alloc object as material has no default ctor
 	Material* mat = new (mAllocator.alloc(sizeof(Material))) Material(def.colour, def.specular, def.fresnelRange, shader, tex, normal);
 
-	mMaterials.insert(compute_string_hash(name.ToString().c_str()), mat);
+	mMaterials.insert(compute_string_hash(name.CStr()), mat);
 
 	return mat;
 }
@@ -417,11 +418,11 @@ Model* AssetManager::LoadModel(const ResourceLocation& tag) {
 
 	std::vector<Material*> mats;
 
-	std::string resloc = tag.ToString();
+	std::string resloc = tag.CStr();
 
 	for (size_t i = 0; i < numMaterials; i++)
 	{
-		mats.push_back(LoadMaterial(resloc + "_mat" + std::to_string(i), mat_parts[i]));
+		mats.push_back(LoadMaterial((resloc + "_mat" + std::to_string(i)).c_str(), mat_parts[i]));
 	}
 
 	for (size_t i = 0; i < numMeshes; i++)
