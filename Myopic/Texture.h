@@ -2,6 +2,7 @@
 #include "Resource.h"
 #include "GraphicsDef.h"
 
+
 enum class TextureType {
 	NORMAL,
 	CUBEMAP,
