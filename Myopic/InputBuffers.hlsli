@@ -46,3 +46,4 @@ cbuffer ObjectDataBuffer : register(b2)
     float specular;
     float3 fresnelRange;
 };
+

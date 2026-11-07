@@ -14,6 +14,7 @@
 
 #define NGE_VERSION 1
 #define NGE_FORMAT_GVERTEX 1
+#define NGE_FORMAT_GVERTEX_SKELETAL 2
 
 constexpr size_t FLOATS_PER_GVERTEX = (3 + 3 + 2 + 3 + 3);
 
@@ -23,6 +24,8 @@ struct mesh_part {
     uint32_t material_index;
     std::vector<float> verts;
     std::vector<uint32_t> indices;
+
+    bool has_anim_data;
 };
 
 constexpr float max_float = std::numeric_limits<float>::max();
@@ -62,6 +65,13 @@ void section_header(std::ostream& stream, const char* header, size_t size) {
     stream.write((char*)&sz, sizeof(uint32_t));
 }
 
+#define MAX_BONE_WEIGHTS 4
+
+struct bone_weights {
+    float weights[MAX_BONE_WEIGHTS];
+    int boneIds[MAX_BONE_WEIGHTS];
+};
+
 void GetMeshPart(const aiMesh* mesh, mesh_part* part) {
 
     std::cout << mesh->mName.C_Str() << std::endl;
@@ -70,6 +80,36 @@ void GetMeshPart(const aiMesh* mesh, mesh_part* part) {
     std::cout << "Face Count = " << mesh->mNumFaces << std::endl;
 
     part->material_index = mesh->mMaterialIndex;
+
+    std::vector<bone_weights> weights;
+
+    if (mesh->HasBones()) {
+        std::cout << "Has Bones" << std::endl;
+        part->has_anim_data = true;
+
+        weights.resize(mesh->mNumVertices);
+
+        for (size_t i = 0; i < mesh->mNumBones; i++)
+        {
+            aiBone* bone = mesh->mBones[i];
+
+            for (size_t j = 0; j < bone->mNumWeights; j++)
+            {
+                aiVertexWeight weight = bone->mWeights[j];
+                
+                for (size_t k = 0; k < MAX_BONE_WEIGHTS; k++)
+                {
+                    if (weights[weight.mVertexId].weights[k] == 0) {
+                        weights[weight.mVertexId].weights[k] = weight.mWeight;
+                        weights[weight.mVertexId].boneIds[k] = i;
+                    }
+                }
+            }
+        }
+    }
+    else {
+        part->has_anim_data = false;
+    }
 
 
     for (size_t j = 0; j < AI_MAX_NUMBER_OF_TEXTURECOORDS; j++)
@@ -110,6 +150,20 @@ void GetMeshPart(const aiMesh* mesh, mesh_part* part) {
         verts.push_back(mesh->mTangents[v].z);
         //std::cout << " Tangent";
         //print_vec(mesh->mTangents[v]);
+
+        if (part->has_anim_data) {
+            for (size_t i = 0; i < MAX_BONE_WEIGHTS; i++)
+            {
+                //this is horrible but who cares!
+                int* intv = &(weights[v].boneIds[i]);
+                float tmp = *((float*)intv);
+                verts.push_back(tmp);
+            }
+            for (size_t i = 0; i < MAX_BONE_WEIGHTS; i++)
+            {
+                verts.push_back(weights[v].weights[i]);
+            }
+        }
 
         //bitangents
         //verts.push_back(mesh->mBitangents[v].x);
@@ -264,11 +318,27 @@ bool CompileToNGE(const std::string& outFile, std::vector<mesh_part>& meshes, st
     static char magic[] = { 'N', 'G', 'E', 0 };
     fs.write(magic, sizeof(magic));
 
+
+    bool has_bones = meshes[0].has_anim_data;
+
+    for (size_t i = 0; i < meshes.size(); i++)
+    {
+        if (meshes[i].has_anim_data != has_bones) {
+            std::cout << "Inconsistent Mesh data: either all or none must contain animation data." << std::endl;
+            return false;
+        }
+    }
+
     //meta info
     uint32_t ngeInfo[2] = {
         NGE_VERSION,
         NGE_FORMAT_GVERTEX,
     };
+
+    if (has_bones) {
+        ngeInfo[1] = NGE_FORMAT_GVERTEX_SKELETAL;
+    }
+
 
     fs.write((char*)ngeInfo, sizeof(ngeInfo));
 

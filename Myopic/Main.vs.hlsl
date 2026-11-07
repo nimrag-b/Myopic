@@ -11,6 +11,7 @@ struct PixelShaderInput
     float2 texcoord : TEXCOORD;
 };
 
+
 PixelShaderInput main(VertexShaderInput input)
 {
     PixelShaderInput output;

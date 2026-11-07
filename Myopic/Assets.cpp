@@ -247,7 +247,16 @@ Model* AssetManager::LoadModel(const ResourceLocation& tag) {
 	fs.read((char*)&format, sizeof(uint32_t));
 
 	//for now we are on version one and the only format we support is GVERTEX so just exit if either is wrong
-	if (version != 1 || format != 1) {
+	if (version != 1) {
+		return nullptr;
+	}
+
+	bool has_bones;
+	switch (format)
+	{
+	case 1: has_bones = false; break;
+	case 2: has_bones = true; break;
+	default:
 		return nullptr;
 	}
 
@@ -409,6 +418,16 @@ Model* AssetManager::LoadModel(const ResourceLocation& tag) {
 			meshes.push_back(mesh);
 		}
 	}
+	else if (format == 2) { //GVertexSkeletal
+		for (size_t i = 0; i < numMeshes; i++)
+		{
+			Mesh* mesh = mAllocator.alloc_object<Mesh>();
+			mesh_part& part = parts[i];
+			gfx.CreateMesh(mesh, part.verts, sizeof(GVertexSkeletal), part.indices, part.material_index);
+
+			meshes.push_back(mesh);
+		}
+	}
 	else {
 		std::cout << "Unknown Mesh format for " << path << std::endl;
 		return nullptr;
@@ -472,6 +491,7 @@ void AssetManager::CreateDefaults()
 	//shaders
 	LoadShader("myopic:gui", "shaders/GUI.vs.cso", "shaders/GUI.ps.cso", &UIlayout);
 	LoadShader("myopic:standard_lit", "shaders/Main.vs.cso", "shaders/Main.ps.cso", &sGvertexLayout);
+	LoadShader("myopic:standard_lit_skeletal", "shaders/Skeletal.vs.cso", "shaders/Main.ps.cso", &sGvertexSkeletalLayout);
 
 	gfx_err err;
 

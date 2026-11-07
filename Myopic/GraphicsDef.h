@@ -49,7 +49,7 @@ struct alignas(16) Light //needs to be aligned to a 16 byte boundary for array a
 
 #define MAX_LIGHTS 16
 //for data that rarely changes
-struct alignas(16)  ConstantDataBuffer {
+struct alignas(16) ConstantDataBuffer {
     CONSTANT_DATA_FLAGS flags;
 	DirectX::XMFLOAT3 constantLightDir;
 	DirectX::XMFLOAT3 constantLightColor;
@@ -73,6 +73,16 @@ struct alignas(16) ObjectDataBuffer {
     float specular;
     DirectX::XMFLOAT3 fresnelRange;
 };
+
+
+constexpr int MAX_ANIM_BONES = 100;
+constexpr int MAX_BONE_INFLUENCE = 4;
+
+
+struct alignas(16) AnimDataBuffer {
+	::XMFLOAT4X4 boneMatrices[MAX_ANIM_BONES];
+};
+
 
 
 
@@ -161,6 +171,16 @@ struct GVertex
 	TANGENT tangent;
 };
 
+struct GVertexSkeletal
+{
+	POSITION position;
+	NORMAL normal;
+	TEXCOORD textureCoordinate;
+	TANGENT tangent;
+	int boneIDs[MAX_BONE_INFLUENCE];
+	float weights[MAX_BONE_INFLUENCE];
+};
+
 struct GUIVertex {
 	POSITION position;
 	TEXCOORD texCoord;
@@ -176,8 +196,18 @@ static D3D11_INPUT_ELEMENT_DESC GVertexLayout[] =
 	//{"BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(GVertex, binormal), D3D11_INPUT_PER_VERTEX_DATA, 0},
 };
 
+static D3D11_INPUT_ELEMENT_DESC GVertexSkeletalLayout[] =
+{
+	{"POSITION",  0, DXGI_FORMAT_R32G32B32_FLOAT,    0, offsetof(GVertexSkeletal, position), D3D11_INPUT_PER_VERTEX_DATA, 0},
+	{"NORMAL",    0, DXGI_FORMAT_R32G32B32_FLOAT,    0, offsetof(GVertexSkeletal, normal), D3D11_INPUT_PER_VERTEX_DATA, 0},
+	{"TEXCOORD",  0, DXGI_FORMAT_R32G32_FLOAT,       0, offsetof(GVertexSkeletal, textureCoordinate), D3D11_INPUT_PER_VERTEX_DATA, 0},
+	{"TANGENT",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, offsetof(GVertexSkeletal, tangent), D3D11_INPUT_PER_VERTEX_DATA, 0},
+	{"BONEID",    0, DXGI_FORMAT_R32G32B32A32_UINT,  0, offsetof(GVertexSkeletal, boneIDs), D3D11_INPUT_PER_VERTEX_DATA, 0},
+    {"BONEWEIGHT",0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(GVertexSkeletal, weights), D3D11_INPUT_PER_VERTEX_DATA, 0},
+};
+
 static VertexLayout sGvertexLayout{ GVertexLayout };
 
-
+static VertexLayout sGvertexSkeletalLayout{ GVertexSkeletalLayout };
 
 
