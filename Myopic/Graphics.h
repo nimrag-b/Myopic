@@ -145,9 +145,9 @@ private:
 	//Render state
 	const VertexLayout* currentVertexLayout = nullptr;
 	D3D11_VIEWPORT d3dViewport{ 0,0,0,0 };
-	ConstantDataBuffer constantDataBuffer;
+	ConstantDataBuffer constantDataBuffer{ CONSTANT_DATA_FLAGS::NONE};
 	Camera camera;
-	XMMATRIX projection;
+	XMMATRIX projection{};
 
 	uint32_t windowWidth = 0;
 	uint32_t windowHeight = 0;

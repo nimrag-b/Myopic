@@ -10,7 +10,7 @@ public:
 	static constexpr const char ErrorLocation[] = "error/error";
 
 
-	ResourceLocation(nullptr_t) : mString() {
+	ResourceLocation(nullptr_t) : mString(), mPathPtr(0) {
 
 	}
 

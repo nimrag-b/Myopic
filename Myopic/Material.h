@@ -38,7 +38,7 @@ public:
 	const DirectX::XMFLOAT4 mMeshColour;
 	const float mSpecular;
 	const DirectX::XMFLOAT3 mFresnelRange;
-	const resource_ptr<Shader> const mShader;
-	const resource_ptr<Texture> const mTexture; //resource view into texture
-	const resource_ptr<Texture> const mNormal; //resource view into texture
+	const resource_ptr<Shader> mShader;
+	const resource_ptr<Texture> mTexture; //resource view into texture
+	const resource_ptr<Texture> mNormal; //resource view into texture
 };

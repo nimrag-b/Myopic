@@ -63,7 +63,7 @@ gfx_err Graphics2D::UpdateTarget(ComPtr<IDXGISurface> newTarget)
 	HRESULT hr;
 	d3dTarget = newTarget;
 
-	auto v = newTarget.Reset();
+	newTarget.Reset();
 
 	D2D1_BITMAP_PROPERTIES1 bitmapProperties =
 		D2D1::BitmapProperties1(
@@ -93,8 +93,8 @@ gfx_err Graphics2D::DestroyTarget() {
 #endif // MYOPIC_STRIP_D2D
 	d2dDeviceContext->SetTarget(nullptr);
 
-	auto v = d2dTargetBitmap.Reset();
-	auto v1 = d3dTarget.Reset();
+	d2dTargetBitmap.Reset();
+	d3dTarget.Reset();
 
 
 
@@ -122,9 +122,9 @@ gfx_err Graphics2D::Render() {
 
 	d2dDeviceContext->DrawTextW(
 		sc_helloWorld.c_str(),
-		sc_helloWorld.length(),
+		static_cast<UINT32>(sc_helloWorld.length()),
 		d2dTextFormat.Get(),
-		D2D1::RectF(0, 0, width, height),
+		D2D1::RectF(0, 0, static_cast<FLOAT>(width), static_cast<FLOAT>(height)),
 		solidBrush.Get()
 	);
 

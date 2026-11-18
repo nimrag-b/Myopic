@@ -37,41 +37,43 @@ struct Attenuation
 	float linear_;
 	float quadratic;
 };
-
+// 16 32 48
 struct alignas(16) Light //needs to be aligned to a 16 byte boundary for array access
 {
-	DirectX::XMFLOAT3 position;
-	DirectX::XMFLOAT3 colour;
-	Attenuation attenuation;
-	//DirectX::XMFLOAT3 padding;
+	DirectX::XMFLOAT3 position;		// 12	12
+	DirectX::XMFLOAT3 colour;		// 12	24
+	Attenuation attenuation;		// 12	36
+	char padding[12];				//		48 (12 bytes of padding)
 };
 
 
 #define MAX_LIGHTS 16
 //for data that rarely changes
 struct alignas(16) ConstantDataBuffer {
-    CONSTANT_DATA_FLAGS flags;
-	DirectX::XMFLOAT3 constantLightDir;
-	DirectX::XMFLOAT3 constantLightColor;
-	Light lights[MAX_LIGHTS];
-	int light_count;
+    CONSTANT_DATA_FLAGS flags;				// 4		4
+	uint32_t light_count;					// 4		8
+	DirectX::XMFLOAT3 constantLightDir;		// 12		20
+	DirectX::XMFLOAT3 constantLightColor;	// 12		36
+	Light lights[MAX_LIGHTS];				// 768		800
+	char padding[16];						//			816 (16 bytes of padding)
 };
 
 //changed on every frame
 struct alignas(16) FrameDataBuffer {
-    DirectX::XMFLOAT4X4 projection;
-    DirectX::XMFLOAT4X4 view;
-
-    DirectX::XMFLOAT3 viewPos;
-	uint32_t ticks;
+    DirectX::XMFLOAT4X4 projection;		// 64	64
+    DirectX::XMFLOAT4X4 view;			// 64	128
+    DirectX::XMFLOAT3 viewPos;			// 12	140
+	uint32_t ticks;						// 4	144
+	//char padding[];					//		144 (0 bytes of padding)
 };
 
 //changed for every object
 struct alignas(16) ObjectDataBuffer {
-    DirectX::XMFLOAT4X4 worldMatrix;
-    DirectX::XMFLOAT4 meshColor;
-    float specular;
-    DirectX::XMFLOAT3 fresnelRange;
+    DirectX::XMFLOAT4X4 worldMatrix;	// 64	64
+    DirectX::XMFLOAT4 meshColor;		// 16	80
+    DirectX::XMFLOAT3 fresnelRange;		// 12	92
+	float specular;						// 4	96
+	//char padding[];					//		96 (0 bytes of padding)
 };
 
 

@@ -45,7 +45,7 @@ gfx_err Graphics::Initialise() {
 		return gfx_err::CONFIG_ERROR;
 	}
 
-	UINT dpi = GetDpiForWindow(hwnd);
+	//UINT dpi = GetDpiForWindow(hwnd);
 
 	//uint32_t dpiWidth = dpi * defaultWindowWidth / USER_DEFAULT_SCREEN_DPI;
 	//uint32_t dpiHeight = dpi * defaultWindowHeight / USER_DEFAULT_SCREEN_DPI;
@@ -614,8 +614,8 @@ gfx_err Graphics::RenderSkybox(const Texture* cubemap)
 
 	SetTexture(cubemap);
 
-	UINT stride = 3 * sizeof(float);
-	UINT offset = 0;
+	//UINT stride = 3 * sizeof(float);
+	//UINT offset = 0;
 
 	SetShader(skyboxShader.get());
 
@@ -793,6 +793,9 @@ void Graphics::DXReportLiveObjects() {
 	DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dbglayer));
 
 	HRESULT hr = dbglayer->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+	if (FAILED(hr)) {
+		std::cout << "Debug Report Failed." << std::endl;
+	}
 	dbglayer->Release();
 #endif
 }

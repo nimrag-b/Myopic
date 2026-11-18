@@ -104,7 +104,7 @@ private:
     int index = 0;
 
 	int addVertex(float x, float y, float z) {
-        double length = sqrt(x * x + y * y + z * z);
+        float length = sqrt(x * x + y * y + z * z);
         vertices.push_back(x / length);
         vertices.push_back(y / length);
         vertices.push_back(z / length);

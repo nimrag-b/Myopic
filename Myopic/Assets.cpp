@@ -6,7 +6,7 @@
 
 
 struct mesh_part {
-	uint32_t material_index;
+	uint32_t material_index{ 0 };
 	std::vector<float> verts;
 	std::vector<uint32_t> indices;
 };
@@ -91,7 +91,11 @@ Texture* AssetManager::LoadTexture(const ResourceLocation& tag)
 
 	SDL_DestroySurface(surfraw);
 
-	bool v = SDL_LockSurface(surf);
+	if (!SDL_LockSurface(surf)) {
+		std::cout << "Failed to lock SDL surface :" << SDL_GetError() << std::endl;
+		SDL_DestroySurface(surf);
+		return nullptr;
+	}
 
 	Texture* t = mAllocator.alloc_object<Texture>();
 
@@ -114,7 +118,7 @@ Texture* AssetManager::LoadTexture(const ResourceLocation& tag)
 Texture* AssetManager::LoadCubemap(const ResourceLocation& tag) {
 
 	if (mLoadMode == LoadMode::Locked) return nullptr;
-	char str[512];
+	//char str[512];
 
 	std::string pathBase = tag.Filepath("textures");
 
@@ -148,7 +152,10 @@ Texture* AssetManager::LoadCubemap(const ResourceLocation& tag) {
 
 		surfs[i] = surf;
 
-		bool v = SDL_LockSurface(surf);
+		if (!SDL_LockSurface(surf)) {
+			std::cout << "Failed to lock SDL surface :" << SDL_GetError() << std::endl;
+			return nullptr;
+		}
 
 		pixels[i] = surf->pixels;
 	}
@@ -279,6 +286,8 @@ Model* AssetManager::LoadModel(const ResourceLocation& tag) {
 
 	std::vector<mesh_part> parts(numMeshes);
 
+	std::vector<bone_dat> bones;
+
 	mesh_part* current = nullptr;
 
 	std::vector<MaterialDef> mat_parts;
@@ -396,6 +405,15 @@ Model* AssetManager::LoadModel(const ResourceLocation& tag) {
 			fs.read((char*)&size, sizeof(uint32_t));
 			fs.read((char*)&current_mat->specular, sizeof(current_mat->specular));
 
+			continue;
+		}
+
+		if (header == ".rig") {
+			uint32_t size; //size in bytes
+			fs.read((char*)&size, sizeof(uint32_t));
+			bones.resize(size);
+
+			fs.read((char*)bones.data(), size);
 			continue;
 		}
 

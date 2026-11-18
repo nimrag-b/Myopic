@@ -29,7 +29,7 @@ private:
 	ComPtr<IDWriteFactory1> d2dDwriteFactory = nullptr;
 	ComPtr<IDWriteTextFormat> d2dTextFormat = nullptr;
 
-	unsigned int width;
-	unsigned int height;
+	unsigned int width = 0;
+	unsigned int height = 0;
 };
 

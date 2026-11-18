@@ -50,9 +50,11 @@ void read_input() {
 				FlushConsoleInputBuffer(hStdInput);
 			}
 			else {
-				ReadConsoleA(hStdInput, buf, 256, &bytesRead, NULL);
-
+				ReadConsoleA(hStdInput, buf, 255, &bytesRead, NULL);
+#pragma warning (push)
+#pragma warning (disable : 6054)
 				input = buf;
+#pragma warning (pop)
 				input_set = true;
 			}
 
@@ -189,7 +191,7 @@ int game(Graphics& gfx, AssetManager& assets) {
 
 		fps_avg_v /= FPS_AVG_COUNT;
 
-		avg_fps_v = 1 / fps_avg_v;
+		avg_fps_v = static_cast<int>(1 / fps_avg_v);
 
 		//avg_fps_v = 1.0 / delta;
 
@@ -259,7 +261,7 @@ int game(Graphics& gfx, AssetManager& assets) {
 			Camera& cam = gfx.GetCamera();
 
 			XMFLOAT3 forward = cam.Forward();
-			XMVECTOR vec = speed * delta * XMLoadFloat3(&forward);
+			XMVECTOR vec = speed * (float)delta * XMLoadFloat3(&forward);
 			::XMStoreFloat3(&forward, vec);
 			cam.Move(forward);
 			//std::cout << cam.Position().x << ", " << cam.Position().y << ", " << cam.Position().z << std::endl;
@@ -268,7 +270,7 @@ int game(Graphics& gfx, AssetManager& assets) {
 			Camera& cam = gfx.GetCamera();
 
 			XMFLOAT3 forward = cam.Forward();
-			XMVECTOR vec = speed * -delta * XMLoadFloat3(&forward);
+			XMVECTOR vec = speed * -(float)delta * XMLoadFloat3(&forward);
 			::XMStoreFloat3(&forward, vec);
 			cam.Move(forward);
 			//std::cout << cam.Position().x << ", " << cam.Position().y << ", " << cam.Position().z << std::endl;
@@ -278,7 +280,7 @@ int game(Graphics& gfx, AssetManager& assets) {
 			Camera& cam = gfx.GetCamera();
 
 			XMFLOAT3 right = cam.Right();
-			XMVECTOR vec = speed * delta * XMLoadFloat3(&right);
+			XMVECTOR vec = speed * (float)delta * XMLoadFloat3(&right);
 			::XMStoreFloat3(&right, vec);
 			cam.Move(right);
 			//std::cout << cam.Position().x << ", " << cam.Position().y << ", " << cam.Position().z << std::endl;
@@ -287,7 +289,7 @@ int game(Graphics& gfx, AssetManager& assets) {
 			Camera& cam = gfx.GetCamera();
 
 			XMFLOAT3 right = cam.Right();
-			XMVECTOR vec = speed * -delta * XMLoadFloat3(&right);
+			XMVECTOR vec = speed * -(float)delta * XMLoadFloat3(&right);
 			::XMStoreFloat3(&right, vec);
 			cam.Move(right);
 			//std::cout << cam.Position().x << ", " << cam.Position().y << ", " << cam.Position().z << std::endl;

@@ -20,11 +20,10 @@ struct Light
 cbuffer ConstantDataBuffer : register(b0)
 {
     int flags;
+    int light_count;
     float3 constantLightDir;
     float3 constantLightColor;
     Light lights[MAX_LIGHTS];
-    int light_count;
-
 };
 cbuffer FrameDataBuffer : register(b1)
 {
@@ -43,7 +42,7 @@ cbuffer ObjectDataBuffer : register(b2)
 {
     matrix model;
     float4 color;
-    float specular;
     float3 fresnelRange;
+    float specular;
 };
 

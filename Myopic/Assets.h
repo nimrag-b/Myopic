@@ -3,12 +3,13 @@
 #include "Resource.h"
 #include "ResourceLocation.h"
 #include "Allocators.h"
+#include "SkeletalRig.h"
 
 typedef long long STR_ID;
 
 inline STR_ID compute_string_hash(const char* str) {
 	const int p = 31;
-	const int m = 1e9 + 9;
+	const int m = static_cast<int>(1e9 + 9);
 	STR_ID hash_value = 0;
 	long long p_pow = 1;
 	char ch = 0;
@@ -123,6 +124,7 @@ public:
 	AssetRegistry<Model> mModels;
 	AssetRegistry<Material> mMaterials;
 	AssetRegistry<Shader> mShaders;
+	AssetRegistry<SkeletalRig> mRigs;
 
 private:
 	Graphics& gfx;
